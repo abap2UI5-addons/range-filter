@@ -68,10 +68,10 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
         AND name     = @s_info-name
       INTO @ls_db-uuid.
     IF sy-subrc <> 0.
-      ls_db-uuid = z2ui5_cl_util=>uuid_get_c32( ).
+      ls_db-uuid = z2ui5_cl_sel_context=>uuid_get_c32( ).
     ENDIF.
 
-    ls_db-data = z2ui5_cl_util=>xml_stringify( data ).
+    ls_db-data = z2ui5_cl_sel_context=>xml_stringify( data ).
 
     " one default per scope - same user (or shared) and handles: a new
     " default takes the flag from the variant that had it

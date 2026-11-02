@@ -21,7 +21,7 @@ CLASS z2ui5_cl_sel_var_pop_save DEFINITION
         selkz         TYPE abap_bool,
         check_user    TYPE abap_bool,
         check_default TYPE abap_bool,
-        t_filter      TYPE z2ui5_cl_util=>ty_t_filter_multi,
+        t_filter      TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
       END OF ty_s_variant_out.
     TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH EMPTY KEY.
 
@@ -39,7 +39,7 @@ CLASS z2ui5_cl_sel_var_pop_save DEFINITION
 
     TYPES:
       BEGIN OF ty_s_result,
-        t_filter        TYPE z2ui5_cl_util=>ty_t_filter_multi,
+        t_filter        TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
         check_confirmed TYPE abap_bool,
       END OF ty_s_result.
 

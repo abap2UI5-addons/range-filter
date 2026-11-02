@@ -15,7 +15,31 @@ and CI gates every change. It is installed with abapGit and depends on the
 | Path | Contents |
 | --- | --- |
 | `src/00/` | Samples (`z2ui5_cl_sel_sample_*`) |
-| `src/01/` | The selection screen itself, its popups and the variant handling |
+| `src/01/` | The selection screen itself, its popups and the variant handling, and the vendored utility copies `z2ui5_cl_sel_context` / `z2ui5_cx_sel_error` (see below) |
+
+## The utility copy principle
+
+`z2ui5_cl_sel_context` is a **renamed copy** of `zabaputil_cl_util_context`
+from the [abap-util](https://github.com/abap-util/abap-util) master catalog,
+**trimmed to the members this repository uses** (filters, ranges, RTTI, XML,
+UUID) plus the private helpers, types and constants those need.
+`z2ui5_cx_sel_error` is `zabaputil_cx_util_error`, renamed and copied as-is.
+abapGit has no dependency management, so utilities are vendored, not referenced.
+
+1. **Nothing from the core's frozen `src/99/01`.** `z2ui5_cl_util*` and
+   `z2ui5_cx_util_error` are kept in abap2UI5 for compatibility only; every
+   utility call goes through `z2ui5_cl_sel_context`, every utility exception
+   is `z2ui5_cx_sel_error`.
+2. **The filter types are part of the public API.** `ty_t_filter_multi` and
+   `ty_s_filter_multi` of `z2ui5_cl_sel_context` appear in the signatures of the
+   popups; they are built exactly like abap-util's, so another addon's own copy
+   of the type (se16n) is compatible with them.
+3. **New methods are added locally** to `z2ui5_cl_sel_context`; if abap-util
+   already has the method, copy it from there with its private helpers.
+4. **Periodic AI sync-back** merges what was added or fixed here into abap-util.
+5. **Keep the copies close to the master.** `abaplint.jsonc` excludes both files
+   from the style rules the master does not follow (`ambiguous_statement`,
+   `max_one_statement`); do not reformat them.
 
 ## Dependencies
 
