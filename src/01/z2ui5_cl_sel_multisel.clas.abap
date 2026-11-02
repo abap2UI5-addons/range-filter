@@ -225,8 +225,14 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
 
       WHEN `LIST_DELETE`.
         mv_popup_name = client->get_event_arg( 1 ).
-        CLEAR ms_result-t_filter[ name = mv_popup_name ]-t_range.
-        CLEAR ms_result-t_filter[ name = mv_popup_name ]-t_token.
+        " READ TABLE, not a table expression: the 702 downport cannot rewrite
+        " CLEAR itab[ ... ]-component
+        FIELD-SYMBOLS <ls_filter> LIKE LINE OF ms_result-t_filter.
+        READ TABLE ms_result-t_filter ASSIGNING <ls_filter> WITH KEY name = mv_popup_name.
+        IF sy-subrc = 0.
+          CLEAR <ls_filter>-t_range.
+          CLEAR <ls_filter>-t_token.
+        ENDIF.
         IF mv_check_popup = abap_false.
           client->view_model_update( ).
         ELSE.
