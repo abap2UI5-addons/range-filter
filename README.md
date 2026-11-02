@@ -18,6 +18,8 @@ and loads the whole selection as a variant. Your app gets the filter back and
 turns it into a SQL `WHERE` clause or filters an internal table with it. For
 developers of abap2UI5 apps that read data on user-defined criteria.
 
+**[Documentation](https://abap2ui5-addons.github.io/range-filter/)** · [Guide](https://abap2ui5-addons.github.io/range-filter/guide) · [range-filter or abap-cloud-gui?](https://abap2ui5-addons.github.io/range-filter/which)
+
 > Part of [abap2UI5-addons](https://github.com/abap2UI5-addons) - addons and apps for [abap2UI5](https://github.com/abap2UI5/abap2UI5), installed with [abapGit](https://abapgit.org).
 
 ## Why
@@ -78,7 +80,7 @@ METHOD z2ui5_if_app~main.
   ENDIF.
 
   IF client->check_on_event( `GO` ).
-    DATA(lv_where) = z2ui5_cl_util=>filter_get_sql_where( mo_multiselect->ms_result-t_filter ).
+    DATA(lv_where) = z2ui5_cl_sel_context=>filter_get_sql_where( mo_multiselect->ms_result-t_filter ).
     SELECT FROM t100 FIELDS * WHERE (lv_where) INTO TABLE @mt_t100 UP TO 100 ROWS.
     client->view_model_update( ).
   ENDIF.
@@ -106,8 +108,8 @@ client->nav_app_call( mo_variant ).
 IF client->check_on_navigated( ).
   DATA(lo_filter) = CAST z2ui5_cl_sel_multisel_pop( client->get_app_prev( ) ).
   IF lo_filter->result( )-check_confirmed = abap_true.
-    z2ui5_cl_util=>filter_itab( EXPORTING filter = lo_filter->result( )-t_filter
-                                CHANGING  val    = mt_table ).
+    z2ui5_cl_sel_context=>filter_itab( EXPORTING filter = lo_filter->result( )-t_filter
+                                       CHANGING  val    = mt_table ).
   ENDIF.
 ENDIF.
 ```
@@ -173,6 +175,8 @@ npm run lint            # abaplint, Standard ABAP (v750)
 npm run check:cloud     # abaplint, ABAP Cloud
 npm run check:abap2ui5  # abap2UI5-linter over apps and views
 npm run rename          # namespace rename check
+npm run site            # the GitHub Pages site (VitePress) into build/site
+npm run site:dev        # the same with the VitePress dev server
 ```
 
 ## Contributing

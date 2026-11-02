@@ -6,3 +6,7 @@ node_modules
 
 # what `npm run rename` writes - the rename check only needs it to succeed
 .github/abaplint/output/
+
+# the GitHub Pages site (npm run site)
+build/
+site/.vitepress/cache/
