@@ -1,8 +1,8 @@
 {
-  "name": "abap2ui5-selection-screen",
+  "name": "abap2ui5-range-filter",
   "private": true,
   "version": "1.0.0",
-  "description": "Selection-Screens, Ranges, Filter and Variant Management for abap2UI5.",
+  "description": "Select-options with saved variants for abap2UI5 apps - generated from a table name or your data.",
   "scripts": {
     "syfixes": "find . -type f -name '*.abap' -exec sed -i -e 's/ RAISE EXCEPTION TYPE cx_sy_itab_line_not_found/ ASSERT 1 = 0/g' {} + ",
     "rename": "abaplint .github/abaplint/rename.json --rename",
@@ -14,13 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abap2UI5-addons/selection-screen.git"
+    "url": "git+https://github.com/abap2UI5-addons/range-filter.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/abap2UI5-addons/selection-screen/issues"
+    "url": "https://github.com/abap2UI5-addons/range-filter/issues"
   },
-  "homepage": "https://github.com/abap2UI5-addons/selection-screen#readme",
+  "homepage": "https://github.com/abap2UI5-addons/range-filter#readme",
   "devDependencies": {
     "@abap2ui5/linter": "^0.8.5",
     "@abap2ui5/linter-render": "^0.8.5",

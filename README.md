@@ -1,18 +1,18 @@
-# selection-screen
+# range-filter
 
 [![abap2UI5-addons](https://img.shields.io/badge/abap2UI5--addons-library-1873b4)](https://github.com/abap2UI5-addons)
 [![ABAP](https://img.shields.io/badge/ABAP-Cloud%20%7C%20Standard%20%E2%89%A5%207.50-blue)](#installation)
 [![abap2UI5](https://img.shields.io/badge/requires-abap2UI5-blue)](https://github.com/abap2UI5/abap2UI5)
-[![License](https://img.shields.io/github/license/abap2UI5-addons/selection-screen)](LICENSE)
+[![License](https://img.shields.io/github/license/abap2UI5-addons/range-filter)](LICENSE)
 <br>
-[![ABAP Cloud](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/selection-screen/abap-cloud.yaml?branch=main&label=ABAP%20Cloud)](https://github.com/abap2UI5-addons/selection-screen/actions/workflows/abap-cloud.yaml)
-[![ABAP Standard](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/selection-screen/abap-standard.yaml?branch=main&label=ABAP%20Standard)](https://github.com/abap2UI5-addons/selection-screen/actions/workflows/abap-standard.yaml)
-[![rename](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/selection-screen/check-rename.yaml?branch=main&label=rename)](https://github.com/abap2UI5-addons/selection-screen/actions/workflows/check-rename.yaml)
-[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Fselection-screen%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/selection-screen/actions/workflows/check-abap2ui5.yaml)
-[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Fselection-screen%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/selection-screen/actions/workflows/check-abap2ui5.yaml)
+[![ABAP Cloud](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-cloud.yaml?branch=main&label=ABAP%20Cloud)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-cloud.yaml)
+[![ABAP Standard](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-standard.yaml?branch=main&label=ABAP%20Standard)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-standard.yaml)
+[![rename](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/check-rename.yaml?branch=main&label=rename)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-rename.yaml)
+[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-abap2ui5.yaml)
+[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-abap2ui5.yaml)
 
 **Select-options with saved variants for your abap2UI5 apps - generated from a table name or your data.**
-You pass a database table name or an internal table; selection-screen builds
+You pass a database table name or an internal table; range-filter builds
 one select-option per field, lets the user enter ranges in a popup, and saves
 and loads the whole selection as a variant. Your app gets the filter back and
 turns it into a SQL `WHERE` clause or filters an internal table with it. For
@@ -26,7 +26,7 @@ In SAP GUI a report gets its selection screen and variants for free with
 `SELECT-OPTIONS`. In a UI5 app each filter field, its range dialog and the
 variant handling would have to be built by hand.
 
-selection-screen does that generically: it reads the fields via RTTI, renders
+range-filter does that generically: it reads the fields via RTTI, renders
 the select-options either inline in your page or as a filter popup, and keeps
 variants in its own table `z2ui5_t_13` - per app, optionally per user, with a
 default variant.
@@ -114,8 +114,9 @@ ENDIF.
 
 ## Features
 
-* Ranges, Filters, Selection-Screens
-* Persist Variants
+* Select-options for every field of a database table or an internal table
+* Ranges entered in a popup - inline in your page or as a filter popup
+* Variants saved and loaded - per app, optionally per user, with a default
 
 ## What is there
 
@@ -125,10 +126,27 @@ ENDIF.
 | `z2ui5_cl_sel_multisel_pop` | the same as a popup app; returns the filter with `result( )` |
 | `z2ui5_cl_sel_var_pop_read`, `z2ui5_cl_sel_var_pop_save` | popups to load and save a variant |
 | `z2ui5_cl_sel_var_db` | variant persistence in table `z2ui5_t_13` |
-| `z2ui5_cl_sel_screen`, `z2ui5_cl_sel_screen_sel` | skeleton of a `PARAMETERS`-style selection screen - the methods are still empty |
 
-For a full report-style selection screen with `PARAMETERS`, `SELECT-OPTIONS`
-and event blocks, see [abap2UI5-addons/abap-cloud-gui](https://github.com/abap2UI5-addons/abap-cloud-gui).
+## range-filter or abap-cloud-gui?
+
+range-filter is a building block for an abap2UI5 app you build yourself: the
+filter fields come from a table or your data, at runtime, and your app does
+the rest. For an app that works like a classic report - a selection screen
+with `PARAMETERS`, `SELECT-OPTIONS`, radio buttons and event blocks, then a
+list or an ALV - or to convert the reports you have, use
+[abap2UI5-addons/abap-cloud-gui](https://github.com/abap2UI5-addons/abap-cloud-gui).
+
+| Question | Use |
+|---|---|
+| Do I build the UI5 app myself and only need filters? | range-filter |
+| Are the filter fields known only at runtime (any table)? | range-filter |
+| Does the app work like a report (selection, then output)? | abap-cloud-gui |
+| Does the report exist already in SAP GUI? | abap-cloud-gui, converted with report2UI5 |
+
+This repository was called `selection-screen` until it was renamed to say
+what it is; GitHub forwards the old address. The ABAP objects keep their
+names (`z2ui5_cl_sel_*`, table `z2ui5_t_13`), so an installation pulls on
+as before.
 
 ## Samples
 
@@ -136,11 +154,10 @@ and event blocks, see [abap2UI5-addons/abap-cloud-gui](https://github.com/abap2U
 |---|---|
 | `z2ui5_cl_sel_sample_01` | Select-options for table `T100` inline in the page, result read with a dynamic `WHERE` |
 | `z2ui5_cl_sel_sample_02` | Filter popup over an internal table |
-| `z2ui5_cl_sel_sample_03` | Skeleton of the `PARAMETERS`-style selection screen |
 
 ## Demo
 
-### Selection-Screen
+### Inline in the page
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/47eb179e-c563-402d-907f-58ac77b43941" />
 
 ### Filter Popup
