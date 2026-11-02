@@ -1,8 +1,8 @@
 # AGENTS.md
 
-Single source of truth for agents working on **selection-screen**.
+Single source of truth for agents working on **range-filter**.
 
-Ranges, filters and selection screens with persisted variants.
+Ranges and filters with persisted variants - select-options generated from a table name or your data.
 
 ## What this repository is
 
@@ -15,7 +15,7 @@ and CI gates every change. It is installed with abapGit and depends on the
 | Path | Contents |
 | --- | --- |
 | `src/00/` | Samples (`z2ui5_cl_sel_sample_*`) |
-| `src/01/` | The selection screen itself, its popups and the variant handling, and the vendored utility copies `z2ui5_cl_sel_context` / `z2ui5_cx_sel_error` (see below) |
+| `src/01/` | The select-options (inline and as a popup), the variant popups and their persistence, and the vendored utility copies `z2ui5_cl_sel_context` / `z2ui5_cx_sel_error` (see below) |
 
 ## The utility copy principle
 

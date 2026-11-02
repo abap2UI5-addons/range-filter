@@ -5,7 +5,6 @@
     "src/00/z2ui5_cl_sel_sample_01.clas.abap|obsolete-model-update||view_model_update|": 1,
     "src/00/z2ui5_cl_sel_sample_02.clas.abap|missing-view-display-on-navigated|||": 1,
     "src/00/z2ui5_cl_sel_sample_02.clas.abap|obsolete-model-update||view_model_update|": 1,
-    "src/00/z2ui5_cl_sel_sample_03.clas.abap|missing-view-display-on-navigated|||": 1,
     "src/01/z2ui5_cl_sel_var_pop_read.clas.abap|obsolete-binder||_bind_edit|": 1,
     "src/01/z2ui5_cl_sel_var_pop_read.clas.abap|unknown-binding-path|sap.m.Text|text|S_DB/CHECK_DEF": 1,
     "src/01/z2ui5_cl_sel_var_pop_read.clas.abap|unknown-binding-path|sap.m.Text|text|S_DB/DESCR": 1,

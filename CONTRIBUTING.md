@@ -1,6 +1,6 @@
 # Contributing
 
-Ranges, filters and selection screens with persisted variants.
+Ranges and filters with persisted variants - select-options generated from a table name or your data.
 
 ## Before you open a pull request
 
