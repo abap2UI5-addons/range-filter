@@ -13,7 +13,7 @@ CLASS z2ui5_cl_sel_multisel DEFINITION
       BEGIN OF ty_s_result,
         tab_name        TYPE string,
         var_name        TYPE string,
-        t_filter        TYPE z2ui5_cl_util=>ty_t_filter_multi,
+        t_filter        TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
         check_confirmed TYPE abap_bool,
       END OF ty_s_result.
 
@@ -31,7 +31,7 @@ CLASS z2ui5_cl_sel_multisel DEFINITION
 
     CLASS-METHODS factory_by_filter
       IMPORTING
-        val             TYPE z2ui5_cl_util=>ty_t_filter_multi
+        val             TYPE z2ui5_cl_sel_context=>ty_t_filter_multi
         check_popup     TYPE abap_bool OPTIONAL
       RETURNING
         VALUE(r_result) TYPE REF TO z2ui5_cl_sel_multisel.
@@ -92,7 +92,7 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
 
   METHOD factory_by_data.
 
-    r_result = factory_by_filter( z2ui5_cl_util=>filter_get_multi_by_data( val ) ).
+    r_result = factory_by_filter( z2ui5_cl_sel_context=>filter_get_multi_by_data( val ) ).
     r_result->mv_check_popup = check_popup.
     r_result->ms_variant = s_variant.
     r_result->set_var_default( ).
@@ -182,10 +182,10 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
       TRY.
           DATA(lo_popup) = CAST z2ui5_cl_pop_get_range( client->get_app_prev( ) ).
           IF lo_popup->result( )-check_confirmed = abap_true.
-            FIELD-SYMBOLS <tab> TYPE z2ui5_cl_util=>ty_s_filter_multi.
+            FIELD-SYMBOLS <tab> TYPE z2ui5_cl_sel_context=>ty_s_filter_multi.
             ASSIGN ms_result-t_filter[ name = mv_popup_name ] TO <tab>.
             <tab>-t_range = lo_popup->result( )-t_range.
-            <tab>-t_token = z2ui5_cl_util=>filter_get_token_t_by_range_t( <tab>-t_range ).
+            <tab>-t_token = z2ui5_cl_sel_context=>filter_get_token_t_by_range_t( <tab>-t_range ).
             client->view_model_update( ).
             RETURN.
           ENDIF.
@@ -196,7 +196,7 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
           DATA(ls_value) = CAST z2ui5_cl_sel_var_pop_read( client->get_app_prev( ) )->result( ).
           IF ls_value-check_confirmed = abap_true.
 
-            z2ui5_cl_util=>xml_parse( EXPORTING xml = ls_value-s_variant-data
+            z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = ls_value-s_variant-data
                                       IMPORTING any = ms_result ).
             IF mv_check_popup = abap_false.
               client->view_model_update( ).
@@ -268,7 +268,7 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
 
   METHOD factory_by_name.
 
-    r_result = factory_by_data( val       = z2ui5_cl_util=>rtti_create_tab_by_name( val )
+    r_result = factory_by_data( val       = z2ui5_cl_sel_context=>rtti_create_tab_by_name( val )
                                 s_variant = s_variant ).
     r_result->ms_result-tab_name = val.
 
@@ -279,7 +279,7 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
     DATA(ls_default) = z2ui5_cl_sel_var_db=>db_read_default( ms_variant ).
 
     IF ls_default-data IS NOT INITIAL.
-      z2ui5_cl_util=>xml_parse( EXPORTING xml = ls_default-data
+      z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = ls_default-data
                                 IMPORTING any = ms_result ).
     ENDIF.
 

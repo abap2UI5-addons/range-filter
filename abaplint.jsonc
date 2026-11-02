@@ -43,7 +43,10 @@
     "add_test_attributes": true,
     "aff_and_xml": true,
     "allowed_object_naming": true,
-    "ambiguous_statement": true,
+    "ambiguous_statement": {
+      // the vendored abap-util copies stay close to the master (AGENTS.md)
+      "exclude": ["z2ui5_cl_sel_context", "z2ui5_cx_sel_error"]
+    },
     "avoid_use": true,
     "begin_single_include": true,
     "call_transaction_authority_check": true,
@@ -199,7 +202,10 @@
     "main_file_contents": true,
     "many_parentheses": true,
     "max_one_method_parameter_per_line": true,
-    "max_one_statement": true,
+    "max_one_statement": {
+      // the vendored abap-util copies stay close to the master (AGENTS.md)
+      "exclude": ["z2ui5_cl_sel_context", "z2ui5_cx_sel_error"]
+    },
     "message_exists": true,
     "method_overwrites_builtin": true,
     "mix_returning": true,

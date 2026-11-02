@@ -57,7 +57,7 @@ CLASS z2ui5_cl_sel_sample_02 IMPLEMENTATION.
         ( product = `oven`     create_date = `01.01.2023` create_by = `Peter` storage_location = `AREA_001` quantity = 400 )
         ( product = `table2`   create_date = `01.01.2023` create_by = `Peter` storage_location = `AREA_001` quantity = 400 ) ).
 
-    z2ui5_cl_util=>filter_itab(
+    z2ui5_cl_sel_context=>filter_itab(
       EXPORTING
        filter = mo_variant->mo_multiselect->ms_result-t_filter
       CHANGING

@@ -46,14 +46,14 @@ CLASS z2ui5_cl_sel_sample_01 IMPLEMENTATION.
     " the browser - only a field of the table goes into the WHERE clause,
     " never a condition or a subquery on another table
     DATA lt_filter LIKE mo_multiselect->ms_result-t_filter.
-    DATA(lt_comp) = z2ui5_cl_util=>rtti_get_t_attri_by_table_name( mv_tabname ).
+    DATA(lt_comp) = z2ui5_cl_sel_context=>rtti_get_t_attri_by_table_name( mv_tabname ).
     LOOP AT mo_multiselect->ms_result-t_filter INTO DATA(ls_filter).
       IF line_exists( lt_comp[ name = ls_filter-name ] ).
         INSERT ls_filter INTO TABLE lt_filter.
       ENDIF.
     ENDLOOP.
 
-    DATA(lv_where) = z2ui5_cl_util=>filter_get_sql_where( lt_filter ).
+    DATA(lv_where) = z2ui5_cl_sel_context=>filter_get_sql_where( lt_filter ).
     ASSIGN mr_table->* TO <tab>.
     SELECT FROM (mv_tabname)
      FIELDS
@@ -153,7 +153,7 @@ CLASS z2ui5_cl_sel_sample_01 IMPLEMENTATION.
 
   METHOD on_init.
 
-    mr_table = z2ui5_cl_util=>rtti_create_tab_by_name( mv_tabname ).
+    mr_table = z2ui5_cl_sel_context=>rtti_create_tab_by_name( mv_tabname ).
     mo_multiselect = z2ui5_cl_sel_multisel=>factory_by_name( val       = mv_tabname
                                                              s_variant = VALUE #( handle01 = `TEST` ) ).
 

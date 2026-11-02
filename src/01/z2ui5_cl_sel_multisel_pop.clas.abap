@@ -20,7 +20,7 @@ CLASS z2ui5_cl_sel_multisel_pop DEFINITION
 
     TYPES:
       BEGIN OF ty_s_result,
-        t_filter        TYPE z2ui5_cl_util=>ty_t_filter_multi,
+        t_filter        TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
         check_confirmed TYPE abap_bool,
       END OF ty_s_result.
 
