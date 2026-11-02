@@ -10,7 +10,9 @@
     "check:cloud": "abaplint .github/abaplint/abap_cloud.jsonc",
     "check:abap2ui5": "abap2ui5lint",
     "check": "npm run lint && npm run check:cloud && npm run check:abap2ui5 && npm run rename",
-    "test": "npm run check"
+    "test": "npm run check",
+    "site": "vitepress build site",
+    "site:dev": "vitepress dev site"
   },
   "repository": {
     "type": "git",
@@ -29,7 +31,8 @@
     "@abaplint/runtime": "^2.14.12",
     "@abaplint/transpiler-cli": "^2.14.12",
     "@types/node": "^22.20.5",
-    "npm-check-updates": "^23.1.1"
+    "npm-check-updates": "^23.1.1",
+    "vitepress": "^1.6.4"
   },
   "engines": {
     "node": ">=22"
