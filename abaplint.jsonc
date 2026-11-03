@@ -352,6 +352,22 @@
     "redundant_cast": true,
     "short_case": true,
     "smim_consistency": true,
-    "sort_empty_key": true
+    "sort_empty_key": true,
+    // added 2026-11 with their findings fixed. Exceptions: z2ui5_cl_sel_context
+    // is the vendored abap-util copy (subrc_after_assign); ms_variant_save and
+    // check_db_active are a public attribute and an optional parameter that
+    // callers may pass (unused_variables)
+    "select_single_full_key": true,
+    "subrc_after_assign": {
+      "exclude": [
+        "z2ui5_cl_sel_context\\."
+      ]
+    },
+    "unused_variables": {
+      "skipNames": [
+        "ms_variant_save",
+        "check_db_active"
+      ]
+    }
   }
 }

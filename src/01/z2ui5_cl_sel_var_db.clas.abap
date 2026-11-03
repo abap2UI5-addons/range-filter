@@ -63,7 +63,7 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
         AND handle02 = @s_info-handle02
         AND handle03 = @s_info-handle03
         AND name     = @s_info-name
-      INTO @ls_db-uuid.
+      INTO @ls_db-uuid. "#EC CI_NOORDER
     IF sy-subrc <> 0.
       ls_db-uuid = z2ui5_cl_sel_context=>uuid_get_c32( ).
     ENDIF.
@@ -100,7 +100,7 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
         AND handle02  = @s_info-handle02
         AND handle03  = @s_info-handle03
         AND check_def = @abap_true
-      INTO CORRESPONDING FIELDS OF @result.
+      INTO CORRESPONDING FIELDS OF @result. "#EC CI_NOORDER
 
     IF sy-subrc = 0.
       RETURN.
@@ -112,7 +112,7 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
         AND handle02  = @s_info-handle02
         AND handle03  = @s_info-handle03
         AND check_def = @abap_true
-      INTO CORRESPONDING FIELDS OF @result.
+      INTO CORRESPONDING FIELDS OF @result. "#EC CI_NOORDER
 
   ENDMETHOD.
 
