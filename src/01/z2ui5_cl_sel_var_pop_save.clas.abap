@@ -94,7 +94,7 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
                       )->a( n = `xmlns:form` v = `sap.ui.layout.form` ).
 
     DATA(dialog) = popup->ele( `Dialog`
-                       )->a( n = `title` v = `Variant Save`
+                       )->a( n = `title` v = `Save Variant`
                        )->a( n = `contentHeight` v = `50%`
                        )->a( n = `contentWidth` v = `50%`
                        )->a( n = `afterClose` v = client->_event( `DB_SAVE_CLOSE` ) ).
@@ -109,11 +109,11 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
 
     form->ele( `Toolbar`
         )->tag( `Title`
-        )->a( n = `text` v = `Layout` ).
+        )->a( n = `text` v = `Variant` ).
 
     form->ele( n = `content` ns = `form`
         )->tag( `Label`
-        )->a( n = `text` v = `Layout`
+        )->a( n = `text` v = `Variant`
         )->tag( `Input`
         )->a( n = `value` v = client->_bind_edit( ms_variant_save-name )
         )->tag( `Label`
@@ -123,11 +123,11 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
 
     form->ele( `Toolbar`
         )->tag( `Title`
-        )->a( n = `text` v = `` ).
+        )->a( n = `text` v = `Save Options` ).
 
     form->ele( n = `content` ns = `form`
         )->tag( `Label`
-        )->a( n = `text` v = `Default Layout`
+        )->a( n = `text` v = `Default Variant`
         )->tag( `Switch`
         )->a( n = `type` v = `AcceptReject`
         )->a( n = `state` v = client->_bind_edit( ms_variant_save-check_default )

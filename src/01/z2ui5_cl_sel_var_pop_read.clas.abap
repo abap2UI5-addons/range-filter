@@ -115,7 +115,7 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
                       )->a( n = `xmlns:core` v = `sap.ui.core` ).
 
     DATA(dialog) = popup->ele( `Dialog`
-                       )->a( n = `title` v = `Variant Read`
+                       )->a( n = `title` v = `Load Variant`
                        )->a( n = `contentHeight` v = `50%`
                        )->a( n = `contentWidth` v = `50%`
                        )->a( n = `afterClose` v = client->_event( `CANCEL` ) ).
@@ -126,7 +126,7 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
         )->ele( `columns`
         )->ele( `Column`
         )->tag( `Text`
-        )->a( n = `text` v = `Layout`
+        )->a( n = `text` v = `Variant`
         )->end(
         )->ele( `Column`
         )->tag( `Text`
