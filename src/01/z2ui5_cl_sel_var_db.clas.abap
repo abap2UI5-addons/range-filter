@@ -43,14 +43,12 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
       lv_uname = s_info-uname.
     ENDIF.
 
-    SELECT FROM z2ui5_t_13
-      FIELDS
-       *
+    SELECT * FROM z2ui5_t_13
       WHERE ( uname = @lv_uname OR uname = @space )
         AND handle01 = @s_info-handle01
         AND handle02 = @s_info-handle02
         AND handle03 = @s_info-handle03
-      INTO TABLE @result.
+      INTO CORRESPONDING FIELDS OF TABLE @result.
 
   ENDMETHOD.
 
@@ -59,14 +57,13 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
     DATA(ls_db) = s_info.
 
     " saving under a name that exists replaces that variant
-    SELECT SINGLE FROM z2ui5_t_13
-      FIELDS uuid
+    SELECT SINGLE uuid FROM z2ui5_t_13
       WHERE uname    = @s_info-uname
         AND handle01 = @s_info-handle01
         AND handle02 = @s_info-handle02
         AND handle03 = @s_info-handle03
         AND name     = @s_info-name
-      INTO @ls_db-uuid.
+      INTO @ls_db-uuid. "#EC CI_NOORDER
     IF sy-subrc <> 0.
       ls_db-uuid = z2ui5_cl_sel_context=>uuid_get_c32( ).
     ENDIF.
@@ -97,29 +94,25 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
       lv_uname = s_info-uname.
     ENDIF.
 
-    SELECT SINGLE FROM z2ui5_t_13
-      FIELDS
-       *
+    SELECT SINGLE * FROM z2ui5_t_13
       WHERE uname     = @lv_uname
         AND handle01  = @s_info-handle01
         AND handle02  = @s_info-handle02
         AND handle03  = @s_info-handle03
         AND check_def = @abap_true
-      INTO @result.
+      INTO CORRESPONDING FIELDS OF @result. "#EC CI_NOORDER
 
     IF sy-subrc = 0.
       RETURN.
     ENDIF.
 
-    SELECT SINGLE FROM z2ui5_t_13
-      FIELDS
-       *
+    SELECT SINGLE * FROM z2ui5_t_13
       WHERE uname     = @space
         AND handle01  = @s_info-handle01
         AND handle02  = @s_info-handle02
         AND handle03  = @s_info-handle03
         AND check_def = @abap_true
-      INTO @result.
+      INTO CORRESPONDING FIELDS OF @result. "#EC CI_NOORDER
 
   ENDMETHOD.
 

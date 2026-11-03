@@ -10,3 +10,6 @@ node_modules
 # the GitHub Pages site (npm run site)
 build/
 site/.vitepress/cache/
+.github/abaplint/rename-deps/
+.github/abaplint/rename_run.json
+.github/out/

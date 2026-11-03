@@ -55,12 +55,13 @@ CLASS z2ui5_cl_sel_sample_01 IMPLEMENTATION.
 
     DATA(lv_where) = z2ui5_cl_sel_context=>filter_get_sql_where( lt_filter ).
     ASSIGN mr_table->* TO <tab>.
-    SELECT FROM (mv_tabname)
-     FIELDS
-       *
+    " ORDER BY keeps UP TO downportable: without it the 702 downport leaves
+    " the statement half rewritten
+    SELECT * FROM (mv_tabname)
       WHERE (lv_where)
-     INTO TABLE @<tab>
-     UP TO 100 ROWS.
+      ORDER BY PRIMARY KEY
+      INTO CORRESPONDING FIELDS OF TABLE @<tab>
+      UP TO 100 ROWS.
 
   ENDMETHOD.
 
