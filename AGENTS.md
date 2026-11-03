@@ -45,9 +45,8 @@ abapGit has no dependency management, so utilities are vendored, not referenced.
 ## Dependencies
 
 - [abap2UI5](https://github.com/abap2UI5/abap2UI5) — the framework
-- [layout-management](https://github.com/abap2UI5-addons/layout-management) — variant persistence
 
-There is no version pin on any of them — abaplint resolves each from its `main`
+There is no version pin on it — abaplint resolves it from its `main`
 branch. That is why the check workflows also run on a weekly schedule: a rename
 upstream breaks this repository silently, and with no pull request open nothing
 else would notice.
