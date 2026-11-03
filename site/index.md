@@ -18,6 +18,9 @@ hero:
     - theme: alt
       text: GitHub
       link: https://github.com/abap2UI5-addons/range-filter
+    - theme: alt
+      text: All addons
+      link: https://abap2ui5-addons.github.io/
 
 features:
   - title: Generated, not declared

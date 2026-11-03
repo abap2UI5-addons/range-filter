@@ -1,0 +1,11 @@
+{
+  "repo": "range-filter",
+  "title": "range-filter",
+  "description": "Select-options with saved variants, from a table name or your data.",
+  "nav": [
+    {
+      "text": "range-filter or abap-cloud-gui?",
+      "link": "/which"
+    }
+  ]
+}

@@ -13,3 +13,5 @@ site/.vitepress/cache/
 .github/abaplint/rename-deps/
 .github/abaplint/rename_run.json
 .github/out/
+site/node_modules/
+site/.vitepress/dist/
