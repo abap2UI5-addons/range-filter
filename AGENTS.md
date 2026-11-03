@@ -90,7 +90,7 @@ nothing built with it.
 - ABAP classes are named ``z2ui5_cl_sel_*``; the variant table keeps its old name
   `z2ui5_t_13` (it holds data - a rename would drop it on every installation).
   No check enforces the prefix: `allowed_object_naming` in `abaplint.jsonc` only
-  checks length and characters, and `.github/abaplint/rename.json` only proves
+  checks length and characters, and `npm run rename` only proves
   that every `z2ui5_*` object still renames cleanly. Keep to it in review.
 - English for code, comments, commit messages, pull requests and issues.
 - All text files are LF-only (`.gitattributes`).
@@ -98,3 +98,22 @@ nothing built with it.
   which documentation files exist, commit style — live in
   [CONVENTIONS.md](https://github.com/abap2UI5/abap2UI5/blob/main/.github/shared/CONVENTIONS.md)
   and bind this repository too.
+
+## Namespace rename
+
+`npm run rename` (CI: `check-rename`) and the manual `build-rename` workflow
+are abap2UI5's namespace rename for this addon - `.github/scripts/rename.mjs`,
+the same file in every addon that has one. Every `z2ui5_` object becomes
+`<name>_...`, for a customer name such as `ZMYUI5` or a registered namespace
+such as `/CA2UI5/` (at most 10 characters), and so does every reference to
+abap2UI5 and to the addons this one builds on: the branch `rename_<name>` runs
+on an abap2UI5 renamed with the same name by its own `build-rename`. What
+follows from it:
+
+- Every object name has at most 25 characters (a transparent table
+  11, an ICF node 10) - 30 minus what the longest new name adds.
+- No literal names a `z2ui5_` object: the rename rewrites references, never a
+  literal. Derive the name - from a typed reference, or behind the prefix of
+  the class's own name.
+- A change that spans several repositories: `RENAME_DEPS_FROM=<dir> npm run
+  rename` takes the dependencies from the clones in `<dir>`.

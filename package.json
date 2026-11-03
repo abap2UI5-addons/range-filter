@@ -5,7 +5,7 @@
   "description": "Select-options with saved variants for abap2UI5 apps - generated from a table name or your data.",
   "scripts": {
     "syfixes": "find . -type f -name '*.abap' -exec sed -i -e 's/ RAISE EXCEPTION TYPE cx_sy_itab_line_not_found/ ASSERT 1 = 0/g' {} + ",
-    "rename": "abaplint .github/abaplint/rename.json --rename",
+    "rename": "node .github/scripts/rename.mjs",
     "lint": "abaplint ./abaplint.jsonc",
     "check:cloud": "abaplint .github/abaplint/abap_cloud.jsonc",
     "check:abap2ui5": "abap2ui5lint",

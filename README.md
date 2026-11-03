@@ -59,6 +59,16 @@ Good for:
 `?app_start=z2ui5_cl_sel_sample_01` for select-options over table `T100`.
 All samples are listed under [Samples](#samples).
 
+### Parallel installation (namespace rename)
+
+To run a second copy next to the original in the same system, rename it the
+way abap2UI5 itself is renamed: run the workflow **build-rename** (Actions →
+build-rename → Run workflow) with the name your abap2UI5 installation was
+renamed to - e.g. `ZMYUI5` or `/CA2UI5/`. It pushes the branch `rename_<name>`, in
+which every object and every reference to abap2UI5 and to the addons this one
+needs carries that name; pull it with abapGit. Rename abap2UI5 and every addon
+of the installation with the same name.
+
 ## Usage
 
 Select-options for every field of a database table, inline in your page
