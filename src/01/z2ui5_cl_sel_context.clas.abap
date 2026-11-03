@@ -547,7 +547,7 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
         IF sy-subrc <> 0.
           RAISE EXCEPTION TYPE z2ui5_cx_sel_error
             EXPORTING
-              val = |TABLE_NOT_FOUD_NAME___{ table_name }|.
+              val = |TABLE_NOT_FOUND_NAME___{ table_name }|.
         ENDIF.
         DATA(lo_struct) = CAST cl_abap_structdescr( lo_obj ).
 
@@ -562,7 +562,7 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
             IF sy-subrc <> 0.
               RAISE EXCEPTION TYPE z2ui5_cx_sel_error
                 EXPORTING
-                  val = |TABLE_NOT_FOUD_NAME___{ table_name }|.
+                  val = |TABLE_NOT_FOUND_NAME___{ table_name }|.
             ENDIF.
 
             DATA(lo_tab) = CAST cl_abap_tabledescr( lo_obj ).

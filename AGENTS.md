@@ -15,8 +15,8 @@ and CI gates every change. It is installed with abapGit and depends on the
 | Path | Contents |
 | --- | --- |
 | `src/00/` | Samples (`z2ui5_cl_sel_sample_*`) |
-| `site/` | The GitHub Pages site (https://abap2ui5-addons.github.io/range-filter/), VitePress: `index.md`, `guide.md`, `which.md` (range-filter or abap-cloud-gui?), `.vitepress/` config and theme. `npm run site` builds it into `build/site`, `.github/workflows/deploy-pages.yaml` deploys it from `main`; the repository's Pages source is "GitHub Actions". The code on the pages follows the samples - change them together |
 | `src/01/` | The select-options (inline and as a popup), the variant popups and their persistence, and the vendored utility copies `z2ui5_cl_sel_context` / `z2ui5_cx_sel_error` (see below) |
+| `site/` | The GitHub Pages site (https://abap2ui5-addons.github.io/range-filter/), VitePress: `index.md`, `guide.md`, `which.md` (range-filter or abap-cloud-gui?), `.vitepress/` config and theme. `npm run site` builds it into `build/site`, `.github/workflows/deploy-pages.yaml` deploys it from `main`; the repository's Pages source is "GitHub Actions". The code on the pages follows the samples - change them together |
 
 ## The utility copy principle
 
@@ -45,9 +45,8 @@ abapGit has no dependency management, so utilities are vendored, not referenced.
 ## Dependencies
 
 - [abap2UI5](https://github.com/abap2UI5/abap2UI5) — the framework
-- [layout-management](https://github.com/abap2UI5-addons/layout-management) — variant persistence
 
-There is no version pin on any of them — abaplint resolves each from its `main`
+There is no version pin on it — abaplint resolves it from its `main`
 branch. That is why the check workflows also run on a weekly schedule: a rename
 upstream breaks this repository silently, and with no pull request open nothing
 else would notice.

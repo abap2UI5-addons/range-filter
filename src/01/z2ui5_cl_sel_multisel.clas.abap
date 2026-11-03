@@ -187,8 +187,10 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
             <tab>-t_range = lo_popup->result( )-t_range.
             <tab>-t_token = z2ui5_cl_sel_context=>filter_get_token_t_by_range_t( <tab>-t_range ).
             client->view_model_update( ).
-            RETURN.
           ENDIF.
+          " handled on cancel too: the caller has to display its popup again,
+          " and the range popup's BUTTON_CANCEL must not reach the caller's events
+          RETURN.
         CATCH cx_root ##NO_HANDLER.
       ENDTRY.
 

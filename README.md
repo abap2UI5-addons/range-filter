@@ -1,12 +1,13 @@
 # range-filter
 
 [![abap2UI5-addons](https://img.shields.io/badge/abap2UI5--addons-library-1873b4)](https://github.com/abap2UI5-addons)
-[![ABAP](https://img.shields.io/badge/ABAP-Cloud%20%7C%20Standard%20%E2%89%A5%207.50-blue)](#installation)
+[![ABAP](https://img.shields.io/badge/ABAP-Cloud%20%7C%20Standard%20%E2%89%A5%207.50%20%7C%207.02-blue)](#installation)
 [![abap2UI5](https://img.shields.io/badge/requires-abap2UI5-blue)](https://github.com/abap2UI5/abap2UI5)
 [![License](https://img.shields.io/github/license/abap2UI5-addons/range-filter)](LICENSE)
 <br>
 [![ABAP Cloud](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-cloud.yaml?branch=main&label=ABAP%20Cloud)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-cloud.yaml)
 [![ABAP Standard](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-standard.yaml?branch=main&label=ABAP%20Standard)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-standard.yaml)
+[![ABAP 7.02](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-702.yaml?branch=main&label=ABAP%207.02)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-702.yaml)
 [![rename](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/check-rename.yaml?branch=main&label=rename)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-rename.yaml)
 [![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-abap2ui5.yaml)
 [![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-abap2ui5.yaml)
@@ -39,6 +40,9 @@ Good for:
 - **Filtering an internal table** the user already sees, with ranges instead
   of a search field.
 
+The data browser [abap2UI5-addons/se16n](https://github.com/abap2UI5-addons/se16n)
+builds its selection on range-filter.
+
 ## Installation
 
 **Requirements**
@@ -46,13 +50,13 @@ Good for:
 - ABAP Cloud (S/4 Public Cloud, BTP ABAP Environment), S/4 Private Cloud or
   On-Premise, or SAP NetWeaver AS ABAP 7.50 or higher
 - NetWeaver 7.02 - 7.40: the branch `702`, downported automatically from
-  `main` on every push - pull abap2UI5 from their `702` branches as well
+  `main` on every push - pull abap2UI5 from its `702` branch as well
 - [abap2UI5](https://github.com/abap2UI5/abap2UI5)
 
 **Steps** - with [abapGit](https://abapgit.org), in this order:
 
 1. [abap2UI5](https://github.com/abap2UI5/abap2UI5)
-2. this repository (branch `main`) - classes and the table `z2ui5_t_13` for
+2. this repository (branch `main`, on NetWeaver 7.02 - 7.40 `702`) - classes and the table `z2ui5_t_13` for
    the variants; nothing else to set up
 
 **Start** - run a sample like any abap2UI5 app, e.g.
@@ -175,7 +179,7 @@ as before.
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/47eb179e-c563-402d-907f-58ac77b43941" />
 
 ### Filter Popup
-<img width="600" alt="Google Chrome 2025-05-03 10 38 12" src="https://github.com/user-attachments/assets/f5c76993-9ad4-46a0-81df-2586ec2c21cf" />
+<img width="600" alt="Filter popup with the select-options of an internal table" src="https://github.com/user-attachments/assets/f5c76993-9ad4-46a0-81df-2586ec2c21cf" />
 <img width="600" alt="image" src="https://github.com/user-attachments/assets/84c4fa61-a95a-4232-b7c1-0f9d3105e20d" />
 
 ## Development
@@ -187,6 +191,7 @@ npm run lint            # abaplint, Standard ABAP (v750)
 npm run check:cloud     # abaplint, ABAP Cloud
 npm run check:abap2ui5  # abap2UI5-linter over apps and views
 npm run rename          # namespace rename check
+npm run downport        # downport the source to 7.02 syntax
 npm run site            # the GitHub Pages site (VitePress) into build/site
 npm run site:dev        # the same with the VitePress dev server
 ```

@@ -115,7 +115,7 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
                       )->a( n = `xmlns:core` v = `sap.ui.core` ).
 
     DATA(dialog) = popup->ele( `Dialog`
-                       )->a( n = `title` v = `Variant Read`
+                       )->a( n = `title` v = `Load Variant`
                        )->a( n = `contentHeight` v = `50%`
                        )->a( n = `contentWidth` v = `50%`
                        )->a( n = `afterClose` v = client->_event( `CANCEL` ) ).
@@ -126,7 +126,7 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
         )->ele( `columns`
         )->ele( `Column`
         )->tag( `Text`
-        )->a( n = `text` v = `Layout`
+        )->a( n = `text` v = `Variant`
         )->end(
         )->ele( `Column`
         )->tag( `Text`
@@ -196,17 +196,25 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read_default.
+
+    DATA ls_saved TYPE z2ui5_cl_sel_multisel=>ty_s_result.
+
     TRY.
 
-        DATA(r_result) = NEW z2ui5_cl_sel_var_pop_read( ).
+        " the default row of the user, else the shared one - db_read( ) fills
+        " neither check_def nor t_filter of mt_variant, so reading the default
+        " from there always came back empty
+        result-s_variant = z2ui5_cl_sel_var_db=>db_read_default( VALUE #( handle01 = var_handle1
+                                                                           handle02 = var_handle2
+                                                                           handle03 = var_handle3 ) ).
+        IF result-s_variant IS INITIAL.
+          RETURN.
+        ENDIF.
 
-        r_result->ms_variant = VALUE #( handle1 = var_handle1
-                                        handle2 = var_handle2
-                                        handle3 = var_handle3 ).
-
-        r_result->db_read( ).
-
-        result-t_filter = r_result->mt_variant[ check_def = abap_true ]-t_filter.
+        " the data is the selection z2ui5_cl_sel_var_pop_save stored, as XML
+        z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = result-s_variant-data
+                                         IMPORTING any = ls_saved ).
+        result-t_filter = ls_saved-t_filter.
 
       CATCH cx_root ##NO_HANDLER.
     ENDTRY.
