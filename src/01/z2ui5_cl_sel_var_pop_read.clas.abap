@@ -24,7 +24,7 @@ CLASS z2ui5_cl_sel_var_pop_read DEFINITION
         s_db       TYPE z2ui5_cl_sel_var_db=>ty_s_db,
         t_filter   TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
       END OF ty_s_variant_out.
-    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH EMPTY KEY.
+    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH DEFAULT KEY.
 
     DATA mt_variant      TYPE ty_t_variant_out.
 
@@ -76,14 +76,26 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
   METHOD db_read.
 
-    mt_variant_db = z2ui5_cl_sel_var_db=>db_read( VALUE #( uname    = ms_variant-uname
-                                                           handle01 = ms_variant-handle1
-                                                           handle02 = ms_variant-handle2
-                                                           handle03 = ms_variant-handle3 ) ).
+    DATA temp1 TYPE z2ui5_t_13.
+    DATA temp2 LIKE LINE OF mt_variant_db.
+    DATA lr_var LIKE REF TO temp2.
+      DATA temp3 TYPE ty_s_variant_out.
+      DATA ls_var_out LIKE temp3.
+    CLEAR temp1.
+    temp1-uname = ms_variant-uname.
+    temp1-handle01 = ms_variant-handle1.
+    temp1-handle02 = ms_variant-handle2.
+    temp1-handle03 = ms_variant-handle3.
+    mt_variant_db = z2ui5_cl_sel_var_db=>db_read( temp1 ).
 
     CLEAR mt_variant.
-    LOOP AT mt_variant_db REFERENCE INTO DATA(lr_var).
-      DATA(ls_var_out) = VALUE ty_s_variant_out( ).
+
+
+    LOOP AT mt_variant_db REFERENCE INTO lr_var.
+
+      CLEAR temp3.
+
+      ls_var_out = temp3.
       ls_var_out-s_db = lr_var->*.
       INSERT ls_var_out INTO TABLE mt_variant.
     ENDLOOP.
@@ -91,12 +103,20 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD factory.
+    DATA temp1 TYPE z2ui5_cl_sel_var_pop_read=>ty_s_variant-uname.
 
-    r_result = NEW #( ).
-    r_result->ms_variant = VALUE #( uname   = COND #( WHEN var_check_user = abap_true THEN sy-uname )
-                                    handle1 = var_handle1
-                                    handle2 = var_handle2
-                                    handle3 = var_handle3 ).
+    CREATE OBJECT r_result.
+    CLEAR r_result->ms_variant.
+
+    IF var_check_user = abap_true.
+      temp1 = sy-uname.
+    ELSE.
+      CLEAR temp1.
+    ENDIF.
+    r_result->ms_variant-uname = temp1.
+    r_result->ms_variant-handle1 = var_handle1.
+    r_result->ms_variant-handle2 = var_handle2.
+    r_result->ms_variant-handle3 = var_handle3.
 
   ENDMETHOD.
 
@@ -109,12 +129,15 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
   METHOD popup_variant_read.
 
-    DATA(popup) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA popup TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA dialog TYPE REF TO z2ui5_cl_ui5_view_builder.
+    popup = z2ui5_cl_ui5_view_builder=>factory(
                       )->ele( n = `FragmentDefinition` ns = `core`
                       )->a( n = `xmlns` v = `sap.m`
                       )->a( n = `xmlns:core` v = `sap.ui.core` ).
 
-    DATA(dialog) = popup->ele( `Dialog`
+
+    dialog = popup->ele( `Dialog`
                        )->a( n = `title` v = `Load Variant`
                        )->a( n = `contentHeight` v = `50%`
                        )->a( n = `contentWidth` v = `50%`
@@ -168,9 +191,13 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD z2ui5_if_app~main.
+        DATA temp4 LIKE sy-subrc.
+        DATA ls_variant LIKE LINE OF mt_variant.
+        FIELD-SYMBOLS <temp2> LIKE LINE OF mt_variant.
+        DATA temp3 LIKE sy-tabix.
     me->client = client.
 
-    IF client->check_on_init( ).
+    IF client->check_on_init( ) IS NOT INITIAL.
       init( ).
       RETURN.
     ENDIF.
@@ -182,11 +209,23 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
         client->nav_app_leave( ).
 
       WHEN `CONFIRM`.
-        IF NOT line_exists( mt_variant[ selkz = abap_true ] ).
+
+        READ TABLE mt_variant WITH KEY selkz = abap_true TRANSPORTING NO FIELDS.
+        temp4 = sy-subrc.
+        IF NOT temp4 = 0.
           client->message_toast_display( `Select a variant first` ).
           RETURN.
         ENDIF.
-        DATA(ls_variant) = mt_variant[ selkz = abap_true ].
+
+
+
+        temp3 = sy-tabix.
+        READ TABLE mt_variant WITH KEY selkz = abap_true ASSIGNING <temp2>.
+        sy-tabix = temp3.
+        IF sy-subrc <> 0.
+          ASSERT 1 = 0.
+        ENDIF.
+        ls_variant = <temp2>.
         ms_result-check_confirmed = abap_true.
         ms_result-s_variant       = ls_variant-s_db.
         client->popup_destroy( ).
@@ -198,15 +237,19 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
   METHOD read_default.
 
     DATA ls_saved TYPE z2ui5_cl_sel_multisel=>ty_s_result.
+        DATA temp5 TYPE z2ui5_t_13.
 
     TRY.
 
         " the default row of the user, else the shared one - db_read( ) fills
         " neither check_def nor t_filter of mt_variant, so reading the default
         " from there always came back empty
-        result-s_variant = z2ui5_cl_sel_var_db=>db_read_default( VALUE #( handle01 = var_handle1
-                                                                           handle02 = var_handle2
-                                                                           handle03 = var_handle3 ) ).
+
+        CLEAR temp5.
+        temp5-handle01 = var_handle1.
+        temp5-handle02 = var_handle2.
+        temp5-handle03 = var_handle3.
+        result-s_variant = z2ui5_cl_sel_var_db=>db_read_default( temp5 ).
         IF result-s_variant IS INITIAL.
           RETURN.
         ENDIF.

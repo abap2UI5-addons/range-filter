@@ -44,13 +44,21 @@ ENDCLASS.
 CLASS z2ui5_cl_sel_multisel_pop IMPLEMENTATION.
 
   METHOD factory_by_data.
+    DATA temp1 LIKE r_result->ms_variant-uname.
 
-    r_result = NEW #( ).
+    CREATE OBJECT r_result.
 
-    r_result->ms_variant = VALUE #( uname    = COND #( WHEN var_check_user = abap_true THEN sy-uname )
-                                    handle01 = var_handle1
-                                    handle02 = var_handle2
-                                    handle03 = var_handle3 ).
+    CLEAR r_result->ms_variant.
+
+    IF var_check_user = abap_true.
+      temp1 = sy-uname.
+    ELSE.
+      CLEAR temp1.
+    ENDIF.
+    r_result->ms_variant-uname = temp1.
+    r_result->ms_variant-handle01 = var_handle1.
+    r_result->ms_variant-handle02 = var_handle2.
+    r_result->ms_variant-handle03 = var_handle3.
 
     r_result->mo_multiselect = z2ui5_cl_sel_multisel=>factory_by_data( val         = data
                                                                        s_variant   = r_result->ms_variant
@@ -66,7 +74,8 @@ CLASS z2ui5_cl_sel_multisel_pop IMPLEMENTATION.
 
   METHOD popup_display.
 
-    DATA(lo_popup) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA lo_popup TYPE REF TO z2ui5_cl_ui5_view_builder.
+    lo_popup = z2ui5_cl_ui5_view_builder=>factory(
                          )->ele( n = `FragmentDefinition` ns = `core`
                          )->a( n = `xmlns` v = `sap.m`
                          )->a( n = `xmlns:core` v = `sap.ui.core` ).
@@ -100,12 +109,12 @@ CLASS z2ui5_cl_sel_multisel_pop IMPLEMENTATION.
   METHOD z2ui5_if_app~main.
     me->client = client.
 
-    IF client->check_on_init( ).
+    IF client->check_on_init( ) IS NOT INITIAL.
       init( ).
       RETURN.
     ENDIF.
 
-    IF mo_multiselect->main( client ).
+    IF mo_multiselect->main( client ) IS NOT INITIAL.
       IF client->get( )-check_on_navigated = abap_true.
         popup_display( ).
       ENDIF.
