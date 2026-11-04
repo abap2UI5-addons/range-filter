@@ -6,8 +6,8 @@ hero:
   text: Select-options and variants for abap2UI5
   tagline: Pass a table name or your data - get one select-option per field, ranges entered in a popup, and the whole selection saved as a variant. Your app gets the filter back as a SQL WHERE clause or applies it to an internal table.
   image:
-    src: /favicon.png
-    alt: abap2UI5
+    src: /logo.svg
+    alt: abap2UI5 addons
   actions:
     - theme: brand
       text: Get started
