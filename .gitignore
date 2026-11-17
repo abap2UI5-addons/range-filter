@@ -15,3 +15,6 @@ site/.vitepress/cache/
 .github/out/
 site/node_modules/
 site/.vitepress/dist/
+
+# the work folder of npm run unit (.github/scripts/unit.mjs)
+.unit/
