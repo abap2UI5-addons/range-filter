@@ -5,12 +5,10 @@
 [![abap2UI5](https://img.shields.io/badge/requires-abap2UI5-blue)](https://github.com/abap2UI5/abap2UI5)
 [![License](https://img.shields.io/github/license/abap2UI5-addons/range-filter)](LICENSE)
 <br>
-[![ABAP Cloud](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-cloud.yaml?branch=main&label=ABAP%20Cloud)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-cloud.yaml)
-[![ABAP Standard](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-standard.yaml?branch=main&label=ABAP%20Standard)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-standard.yaml)
-[![ABAP 7.02](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/abap-702.yaml?branch=main&label=ABAP%207.02)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/abap-702.yaml)
-[![rename](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/check-rename.yaml?branch=main&label=rename)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-rename.yaml)
-[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-abap2ui5.yaml)
-[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/check-abap2ui5.yaml)
+[![CI](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/ci.yaml?branch=main&label=CI)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/ci.yaml)
+[![ABAP 7.02](https://img.shields.io/github/actions/workflow/status/abap2UI5-addons/range-filter/ci-702.yaml?branch=main&label=ABAP%207.02)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/ci-702.yaml)
+[![check-abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fcheck-abap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/ci.yaml)
+[![abap2UI5](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fabap2UI5-addons%2Frange-filter%2Fbadges%2Fabap2ui5.json)](https://github.com/abap2UI5-addons/range-filter/actions/workflows/ci.yaml)
 
 **Select-options with saved variants for your abap2UI5 apps - generated from a table name or your data.**
 You pass a database table name or an internal table; range-filter builds

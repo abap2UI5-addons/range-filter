@@ -49,7 +49,7 @@ abapGit has no dependency management, so utilities are vendored, not referenced.
   `z2ui5_cl_ui5_view_builder`), never its frozen `src/99`
 
 There is no version pin on it — abaplint resolves it from its `main`
-branch. That is why the check workflows also run on a weekly schedule: a rename
+branch. That is why `ci` also runs on a weekly schedule: a rename
 upstream breaks this repository silently, and with no pull request open nothing
 else would notice.
 
@@ -63,8 +63,10 @@ chain abapGit cannot resolve for the user. It replaced the core's frozen
 `src/99`. A fix to one of the two popups belongs in the other as well.
 Its test class came along unchanged: its roundtrip tests drive the popup
 through the core's internals (`z2ui5_cl_ui5_handler`, `_action`, `_client`)
-as the core's own app tests do; they run in a system only (there is no
-transpiled unit run here), and when a core refactor turns `npm run lint` red
+as the core's own app tests do; they run in a system and in `npm run unit`
+(`.github/scripts/unit.mjs`: the package copied into a checkout of
+abap2UI5's `main`, downported, transpiled, the tests of `Z2UI5_CL_SEL*` run
+on the Node runtime), and when a core refactor turns `npm run lint` red
 there, follow what the core's tests and popups' copy did.
 
 ## Build and verify
@@ -74,8 +76,16 @@ npm ci
 npm run check
 ```
 
-`npm run check` runs exactly what CI runs. See [CONTRIBUTING.md](CONTRIBUTING.md)
-for what each gate proves and how the abap2UI5-linter baseline works.
+`npm run check` runs the lint, linter and rename gates of CI; the ABAP Unit
+tests run separately with `npm run unit` (a few minutes: it builds abap2UI5's
+transpiled runtime). See [CONTRIBUTING.md](CONTRIBUTING.md) for what each gate
+proves and how the abap2UI5-linter baseline works.
+
+CI comes from the shared CI template of abap2UI5-addons (reusable workflows in
+[rap-ext](https://github.com/abap2UI5-addons/rap-ext/blob/main/.github/ci/README.md),
+pinned by commit, moved by `bump-deps`): `ci` (abaplint Standard and Cloud,
+unit, rename, the abap2UI5-linter - one job each), `ci-702` (writes and lints
+the downported branch `702`), `build-rename`, `deploy-pages`, `bump-deps`.
 
 ## Views
 
@@ -116,7 +126,7 @@ nothing built with it.
 
 ## Namespace rename
 
-`npm run rename` (CI: `check-rename`) and the manual `build-rename` workflow
+`npm run rename` (CI: the `rename` job of `ci`) and the manual `build-rename` workflow
 are abap2UI5's namespace rename for this addon - `.github/scripts/rename.mjs`,
 the same file in every addon that has one. Every `z2ui5_` object becomes
 `<name>_...`, for a customer name such as `ZMYUI5` or a registered namespace
