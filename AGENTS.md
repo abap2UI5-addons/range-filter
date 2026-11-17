@@ -15,7 +15,7 @@ and CI gates every change. It is installed with abapGit and depends on the
 | Path | Contents |
 | --- | --- |
 | `src/00/` | Samples (`z2ui5_cl_sel_sample_*`) |
-| `src/01/` | The select-options (inline and as a popup), the variant popups and their persistence, and the vendored utility copies `z2ui5_cl_sel_context` / `z2ui5_cx_sel_error` (see below) |
+| `src/01/` | The select-options (inline and as a popup), the range popup `z2ui5_cl_sel_range_pop`, the variant popups and their persistence, and the vendored utility copies `z2ui5_cl_sel_context` / `z2ui5_cx_sel_error` (see below) |
 | `site/` | The GitHub Pages site (https://abap2ui5-addons.github.io/range-filter/), VitePress: `index.md`, `guide.md`, `which.md` (range-filter or abap-cloud-gui?), `.vitepress/` config and theme. `npm run site` builds it into `build/site`, `.github/workflows/deploy-pages.yaml` deploys it from `main`; the repository's Pages source is "GitHub Actions". The code on the pages follows the samples - change them together |
 
 ## The utility copy principle
@@ -44,12 +44,28 @@ abapGit has no dependency management, so utilities are vendored, not referenced.
 
 ## Dependencies
 
-- [abap2UI5](https://github.com/abap2UI5/abap2UI5) — the framework
+- [abap2UI5](https://github.com/abap2UI5/abap2UI5) — the framework, its
+  released API only (`z2ui5_if_app`, `z2ui5_if_client`,
+  `z2ui5_cl_ui5_view_builder`), never its frozen `src/99`
 
 There is no version pin on it — abaplint resolves it from its `main`
 branch. That is why the check workflows also run on a weekly schedule: a rename
 upstream breaks this repository silently, and with no pull request open nothing
 else would notice.
+
+Nothing else - range-filter installs with abap2UI5 alone. The range popup
+`z2ui5_cl_sel_range_pop` is a renamed copy of
+[popups](https://github.com/abap2UI5-addons/popups)' `z2ui5_cl_popup_get_range`
+(on `z2ui5_cl_sel_context` instead of `z2ui5_cl_popup_context`), not a
+reference to it: popups pulls layout-management and that one abap2UI5-ext, a
+chain abapGit cannot resolve for the user. It replaced the core's frozen
+`z2ui5_cl_pop_get_range` (`src/99/02`), which goes when the core drops
+`src/99`. A fix to one of the two popups belongs in the other as well.
+Its test class came along unchanged: its roundtrip tests drive the popup
+through the core's internals (`z2ui5_cl_ui5_handler`, `_action`, `_client`)
+as the core's own app tests do; they run in a system only (there is no
+transpiled unit run here), and when a core refactor turns `npm run lint` red
+there, follow what the core's tests and popups' copy did.
 
 ## Build and verify
 

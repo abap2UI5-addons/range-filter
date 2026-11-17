@@ -59,6 +59,9 @@ builds its selection on range-filter.
 2. this repository (branch `main`, on NetWeaver 7.02 - 7.40 `702`) - classes and the table `z2ui5_t_13` for
    the variants; nothing else to set up
 
+Nothing else: range-filter needs no other addon and nothing of abap2UI5's
+frozen `src/99` - the range popup is its own (`z2ui5_cl_sel_range_pop`).
+
 **Start** - run a sample like any abap2UI5 app, e.g.
 `?app_start=z2ui5_cl_sel_sample_01` for select-options over table `T100`.
 All samples are listed under [Samples](#samples).
@@ -142,6 +145,7 @@ ENDIF.
 |---|---|
 | `z2ui5_cl_sel_multisel` | select-options for a table name (`factory_by_name`), for data (`factory_by_data`) or for a filter (`factory_by_filter`); renders into your view with `set_output( )`, handles its events in `main( )` |
 | `z2ui5_cl_sel_multisel_pop` | the same as a popup app; returns the filter with `result( )` |
+| `z2ui5_cl_sel_range_pop` | the popup that edits the ranges of one field (opened by the two above) |
 | `z2ui5_cl_sel_var_pop_read`, `z2ui5_cl_sel_var_pop_save` | popups to load and save a variant |
 | `z2ui5_cl_sel_var_db` | variant persistence in table `z2ui5_t_13` |
 

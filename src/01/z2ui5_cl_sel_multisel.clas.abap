@@ -180,7 +180,7 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
 
     IF client->check_on_navigated( ).
       TRY.
-          DATA(lo_popup) = CAST z2ui5_cl_pop_get_range( client->get_app_prev( ) ).
+          DATA(lo_popup) = CAST z2ui5_cl_sel_range_pop( client->get_app_prev( ) ).
           IF lo_popup->result( )-check_confirmed = abap_true.
             FIELD-SYMBOLS <tab> TYPE z2ui5_cl_sel_context=>ty_s_filter_multi.
             ASSIGN ms_result-t_filter[ name = mv_popup_name ] TO <tab>.
@@ -223,7 +223,7 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
       WHEN `LIST_OPEN`.
         mv_popup_name = client->get_event_arg( 1 ).
         DATA(ls_sql) = ms_result-t_filter[ name = client->get_event_arg( 1 ) ].
-        client->nav_app_call( z2ui5_cl_pop_get_range=>factory( ls_sql-t_range ) ).
+        client->nav_app_call( z2ui5_cl_sel_range_pop=>factory( ls_sql-t_range ) ).
 
       WHEN `LIST_DELETE`.
         mv_popup_name = client->get_event_arg( 1 ).
