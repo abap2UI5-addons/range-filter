@@ -18,18 +18,32 @@ CLASS ltcl_test IMPLEMENTATION.
 
   METHOD test_factory_empty.
 
-    DATA(lo_pop) = z2ui5_cl_sel_range_pop=>factory( ).
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    lo_pop = z2ui5_cl_sel_range_pop=>factory( ).
     cl_abap_unit_assert=>assert_bound( lo_pop ).
 
   ENDMETHOD.
 
   METHOD test_factory_w_range.
 
-    DATA(lt_range) = VALUE z2ui5_cl_sel_context=>ty_t_range(
-      ( sign = `I` option = `EQ` low = `100` ) ).
+    DATA temp1 TYPE z2ui5_cl_sel_context=>ty_t_range.
+    DATA temp2 LIKE LINE OF temp1.
+    DATA lt_range LIKE temp1.
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    DATA ls_result TYPE z2ui5_cl_sel_range_pop=>ty_s_result.
+    CLEAR temp1.
 
-    DATA(lo_pop) = z2ui5_cl_sel_range_pop=>factory( lt_range ).
-    DATA(ls_result) = lo_pop->result( ).
+    temp2-sign = `I`.
+    temp2-option = `EQ`.
+    temp2-low = `100`.
+    INSERT temp2 INTO TABLE temp1.
+
+    lt_range = temp1.
+
+
+    lo_pop = z2ui5_cl_sel_range_pop=>factory( lt_range ).
+
+    ls_result = lo_pop->result( ).
 
     cl_abap_unit_assert=>assert_false( ls_result-check_confirmed ).
     cl_abap_unit_assert=>assert_not_initial( ls_result-t_range ).
@@ -38,20 +52,42 @@ CLASS ltcl_test IMPLEMENTATION.
 
   METHOD test_result_initial.
 
-    DATA(lo_pop) = z2ui5_cl_sel_range_pop=>factory( ).
-    DATA(ls_result) = lo_pop->result( ).
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    DATA ls_result TYPE z2ui5_cl_sel_range_pop=>ty_s_result.
+    lo_pop = z2ui5_cl_sel_range_pop=>factory( ).
+
+    ls_result = lo_pop->result( ).
     cl_abap_unit_assert=>assert_false( ls_result-check_confirmed ).
 
   ENDMETHOD.
 
   METHOD test_factory_range_count.
 
-    DATA(lt_range) = VALUE z2ui5_cl_sel_context=>ty_t_range(
-      ( sign = `I` option = `EQ` low = `100` )
-      ( sign = `I` option = `BT` low = `200` high = `300` ) ).
+    DATA temp3 TYPE z2ui5_cl_sel_context=>ty_t_range.
+    DATA temp4 LIKE LINE OF temp3.
+    DATA lt_range LIKE temp3.
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    DATA ls_result TYPE z2ui5_cl_sel_range_pop=>ty_s_result.
+    CLEAR temp3.
 
-    DATA(lo_pop) = z2ui5_cl_sel_range_pop=>factory( lt_range ).
-    DATA(ls_result) = lo_pop->result( ).
+    CLEAR temp4.
+    temp4-sign = `I`.
+    temp4-option = `EQ`.
+    temp4-low = `100`.
+    INSERT temp4 INTO TABLE temp3.
+    CLEAR temp4.
+    temp4-sign = `I`.
+    temp4-option = `BT`.
+    temp4-low = `200`.
+    temp4-high = `300`.
+    INSERT temp4 INTO TABLE temp3.
+
+    lt_range = temp3.
+
+
+    lo_pop = z2ui5_cl_sel_range_pop=>factory( lt_range ).
+
+    ls_result = lo_pop->result( ).
 
     " factory appends one empty row to the range for new entries
     cl_abap_unit_assert=>assert_equals( exp = 3
@@ -61,8 +97,11 @@ CLASS ltcl_test IMPLEMENTATION.
 
   METHOD test_factory_empty_row.
 
-    DATA(lo_pop) = z2ui5_cl_sel_range_pop=>factory( ).
-    DATA(ls_result) = lo_pop->result( ).
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    DATA ls_result TYPE z2ui5_cl_sel_range_pop=>ty_s_result.
+    lo_pop = z2ui5_cl_sel_range_pop=>factory( ).
+
+    ls_result = lo_pop->result( ).
 
     " factory always inserts one empty row even for empty input
     cl_abap_unit_assert=>assert_equals( exp = 1
@@ -72,13 +111,32 @@ CLASS ltcl_test IMPLEMENTATION.
 
   METHOD test_factory_multi_range.
 
-    DATA(lt_range) = VALUE z2ui5_cl_sel_context=>ty_t_range(
-      ( sign = `I` option = `EQ` low = `A` )
-      ( sign = `E` option = `EQ` low = `B` )
-      ( sign = `I` option = `GE` low = `C` ) ).
+    DATA temp5 TYPE z2ui5_cl_sel_context=>ty_t_range.
+    DATA temp6 LIKE LINE OF temp5.
+    DATA lt_range LIKE temp5.
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    DATA ls_result TYPE z2ui5_cl_sel_range_pop=>ty_s_result.
+    CLEAR temp5.
 
-    DATA(lo_pop) = z2ui5_cl_sel_range_pop=>factory( lt_range ).
-    DATA(ls_result) = lo_pop->result( ).
+    temp6-sign = `I`.
+    temp6-option = `EQ`.
+    temp6-low = `A`.
+    INSERT temp6 INTO TABLE temp5.
+    temp6-sign = `E`.
+    temp6-option = `EQ`.
+    temp6-low = `B`.
+    INSERT temp6 INTO TABLE temp5.
+    temp6-sign = `I`.
+    temp6-option = `GE`.
+    temp6-low = `C`.
+    INSERT temp6 INTO TABLE temp5.
+
+    lt_range = temp5.
+
+
+    lo_pop = z2ui5_cl_sel_range_pop=>factory( lt_range ).
+
+    ls_result = lo_pop->result( ).
 
     " 3 input rows + 1 empty row appended by factory
     cl_abap_unit_assert=>assert_equals( exp = 4
@@ -121,11 +179,14 @@ ENDCLASS.
 CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD popup_create.
+    DATA temp1 TYPE REF TO z2ui5_cl_ui5_handler.
 
     ro_pop = z2ui5_cl_sel_range_pop=>factory( ).
-    mo_action = NEW #( NEW z2ui5_cl_ui5_handler( `` ) ).
+
+    CREATE OBJECT temp1 TYPE z2ui5_cl_ui5_handler EXPORTING VAL = ``.
+    CREATE OBJECT mo_action EXPORTING VAL = temp1.
     mo_action->mo_app->mo_app = ro_pop.
-    mi_client = NEW z2ui5_cl_ui5_client( mo_action ).
+    CREATE OBJECT mi_client TYPE z2ui5_cl_ui5_client EXPORTING ACTION = mo_action.
 
     " first roundtrip builds mt_filter and renders the dialog
     ro_pop->z2ui5_if_app~main( mi_client ).
@@ -135,7 +196,8 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD test_init_displays_popup.
 
-    DATA(lo_pop) = popup_create( ).
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    lo_pop = popup_create( ).
 
     cl_abap_unit_assert=>assert_equals( exp = 1
                                         act = lines( lo_pop->mt_filter ) ).
@@ -145,30 +207,84 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD test_confirm_builds_range.
 
-    DATA(lo_pop) = popup_create( ).
-    lo_pop->mt_filter[ 1 ]-option = `EQ`.
-    lo_pop->mt_filter[ 1 ]-low    = `ABC`.
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    FIELD-SYMBOLS <temp7> LIKE LINE OF lo_pop->mt_filter.
+    DATA temp8 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp9> LIKE LINE OF lo_pop->mt_filter.
+    DATA temp10 LIKE sy-tabix.
+    DATA ls_result TYPE z2ui5_cl_sel_range_pop=>ty_s_result.
+    FIELD-SYMBOLS <temp11> LIKE LINE OF ls_result-t_range.
+    DATA temp12 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp13> LIKE LINE OF ls_result-t_range.
+    DATA temp14 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp15> LIKE LINE OF ls_result-t_range.
+    DATA temp16 LIKE sy-tabix.
+    lo_pop = popup_create( ).
+
+
+    temp8 = sy-tabix.
+    READ TABLE lo_pop->mt_filter INDEX 1 ASSIGNING <temp7>.
+    sy-tabix = temp8.
+    IF sy-subrc <> 0.
+      ASSERT 1 = 0.
+    ENDIF.
+    <temp7>-option = `EQ`.
+
+
+    temp10 = sy-tabix.
+    READ TABLE lo_pop->mt_filter INDEX 1 ASSIGNING <temp9>.
+    sy-tabix = temp10.
+    IF sy-subrc <> 0.
+      ASSERT 1 = 0.
+    ENDIF.
+    <temp9>-low    = `ABC`.
 
     mo_action->ms_actual-event = `BUTTON_CONFIRM`.
     lo_pop->z2ui5_if_app~main( mi_client ).
 
-    DATA(ls_result) = lo_pop->result( ).
+
+    ls_result = lo_pop->result( ).
     cl_abap_unit_assert=>assert_true( ls_result-check_confirmed ).
     cl_abap_unit_assert=>assert_equals( exp = 1
                                         act = lines( ls_result-t_range ) ).
+
+
+    temp12 = sy-tabix.
+    READ TABLE ls_result-t_range INDEX 1 ASSIGNING <temp11>.
+    sy-tabix = temp12.
+    IF sy-subrc <> 0.
+      ASSERT 1 = 0.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `I`
-                                        act = ls_result-t_range[ 1 ]-sign ).
+                                        act = <temp11>-sign ).
+
+
+    temp14 = sy-tabix.
+    READ TABLE ls_result-t_range INDEX 1 ASSIGNING <temp13>.
+    sy-tabix = temp14.
+    IF sy-subrc <> 0.
+      ASSERT 1 = 0.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `EQ`
-                                        act = ls_result-t_range[ 1 ]-option ).
+                                        act = <temp13>-option ).
+
+
+    temp16 = sy-tabix.
+    READ TABLE ls_result-t_range INDEX 1 ASSIGNING <temp15>.
+    sy-tabix = temp16.
+    IF sy-subrc <> 0.
+      ASSERT 1 = 0.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `ABC`
-                                        act = ls_result-t_range[ 1 ]-low ).
+                                        act = <temp15>-low ).
     cl_abap_unit_assert=>assert_true( popup_destroyed( ) ).
 
   ENDMETHOD.
 
   METHOD test_confirm_skips_empty.
 
-    DATA(lo_pop) = popup_create( ).
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    lo_pop = popup_create( ).
 
     mo_action->ms_actual-event = `BUTTON_CONFIRM`.
     lo_pop->z2ui5_if_app~main( mi_client ).
@@ -180,7 +296,8 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD test_add_row.
 
-    DATA(lo_pop) = popup_create( ).
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    lo_pop = popup_create( ).
 
     mo_action->ms_actual-event = `POPUP_ADD`.
     lo_pop->z2ui5_if_app~main( mi_client ).
@@ -192,11 +309,28 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD test_delete_row.
 
-    DATA(lo_pop) = popup_create( ).
-    DATA(lv_key) = lo_pop->mt_filter[ 1 ]-key.
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    DATA lv_key TYPE z2ui5_cl_sel_range_pop=>ty_s_filter_pop-key.
+    FIELD-SYMBOLS <temp2> LIKE LINE OF lo_pop->mt_filter.
+    DATA temp3 LIKE sy-tabix.
+    DATA temp17 TYPE string_table.
+    lo_pop = popup_create( ).
+
+
+
+    temp3 = sy-tabix.
+    READ TABLE lo_pop->mt_filter INDEX 1 ASSIGNING <temp2>.
+    sy-tabix = temp3.
+    IF sy-subrc <> 0.
+      ASSERT 1 = 0.
+    ENDIF.
+    lv_key = <temp2>-key.
 
     mo_action->ms_actual-event = `POPUP_DELETE`.
-    mo_action->ms_actual-t_event_arg = VALUE #( ( lv_key ) ).
+
+    CLEAR temp17.
+    INSERT lv_key INTO TABLE temp17.
+    mo_action->ms_actual-t_event_arg = temp17.
     lo_pop->z2ui5_if_app~main( mi_client ).
 
     cl_abap_unit_assert=>assert_initial( lo_pop->mt_filter ).
@@ -205,7 +339,8 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD test_cancel.
 
-    DATA(lo_pop) = popup_create( ).
+    DATA lo_pop TYPE REF TO z2ui5_cl_sel_range_pop.
+    lo_pop = popup_create( ).
 
     mo_action->ms_actual-event = `BUTTON_CANCEL`.
     lo_pop->z2ui5_if_app~main( mi_client ).
@@ -217,7 +352,8 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD popup_xml.
 
-    LOOP AT mo_action->ms_next-t_action_front INTO DATA(ls_action)
+    DATA ls_action LIKE LINE OF mo_action->ms_next-t_action_front.
+    LOOP AT mo_action->ms_next-t_action_front INTO ls_action
          WHERE slot = z2ui5_if_client=>cs_view-popup AND method = `display`.
       result = ls_action-xml.
     ENDLOOP.
@@ -226,8 +362,13 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD popup_destroyed.
 
-    result = xsdbool( line_exists( mo_action->ms_next-t_action_front[ slot   = z2ui5_if_client=>cs_view-popup
-                                                                      method = `destroy` ] ) ).
+    DATA temp19 LIKE sy-subrc.
+    DATA temp1 TYPE xsdboolean.
+    READ TABLE mo_action->ms_next-t_action_front WITH KEY slot = z2ui5_if_client=>cs_view-popup method = `destroy` TRANSPORTING NO FIELDS.
+    temp19 = sy-subrc.
+
+    temp1 = boolc( temp19 = 0 ).
+    result = temp1.
 
   ENDMETHOD.
 

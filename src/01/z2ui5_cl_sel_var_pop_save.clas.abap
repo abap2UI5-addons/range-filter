@@ -23,7 +23,7 @@ CLASS z2ui5_cl_sel_var_pop_save DEFINITION
         check_default TYPE abap_bool,
         t_filter      TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
       END OF ty_s_variant_out.
-    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH EMPTY KEY.
+    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH DEFAULT KEY.
 
     DATA ms_variant_save TYPE ty_s_variant_out.
 
@@ -65,14 +65,22 @@ ENDCLASS.
 CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
 
   METHOD factory.
+    DATA temp1 TYPE z2ui5_cl_sel_var_pop_save=>ty_s_variant-uname.
 
-    r_result = NEW #( ).
+    CREATE OBJECT r_result.
     r_result->s_variant = val.
 
-    r_result->ms_variant = VALUE #( uname   = COND #( WHEN var_check_user = abap_true THEN sy-uname )
-                                    handle1 = var_handle1
-                                    handle2 = var_handle2
-                                    handle3 = var_handle3 ).
+    CLEAR r_result->ms_variant.
+
+    IF var_check_user = abap_true.
+      temp1 = sy-uname.
+    ELSE.
+      CLEAR temp1.
+    ENDIF.
+    r_result->ms_variant-uname = temp1.
+    r_result->ms_variant-handle1 = var_handle1.
+    r_result->ms_variant-handle2 = var_handle2.
+    r_result->ms_variant-handle3 = var_handle3.
     " the switch starts where the caller stands: user-specific unless it
     " asked for variants without a user
     r_result->ms_variant_save-check_user = var_check_user.
@@ -87,19 +95,24 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
 
   METHOD popup_variant_save.
 
-    DATA(popup) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA popup TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA dialog TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA form TYPE REF TO z2ui5_cl_ui5_view_builder.
+    popup = z2ui5_cl_ui5_view_builder=>factory(
                       )->ele( n = `FragmentDefinition` ns = `core`
                       )->a( n = `xmlns` v = `sap.m`
                       )->a( n = `xmlns:core` v = `sap.ui.core`
                       )->a( n = `xmlns:form` v = `sap.ui.layout.form` ).
 
-    DATA(dialog) = popup->ele( `Dialog`
+
+    dialog = popup->ele( `Dialog`
                        )->a( n = `title` v = `Save Variant`
                        )->a( n = `contentHeight` v = `50%`
                        )->a( n = `contentWidth` v = `50%`
                        )->a( n = `afterClose` v = client->_event( `DB_SAVE_CLOSE` ) ).
 
-    DATA(form) = dialog->ele( n = `SimpleForm` ns = `form`
+
+    form = dialog->ele( n = `SimpleForm` ns = `form`
                      )->a( n = `editable` b = abap_true
                      )->a( n = `labelSpanXL` v = `4`
                      )->a( n = `labelSpanL` v = `4`
@@ -159,7 +172,7 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
   METHOD z2ui5_if_app~main.
     me->client = client.
 
-    IF client->check_on_init( ).
+    IF client->check_on_init( ) IS NOT INITIAL.
       init( ).
       RETURN.
     ENDIF.
@@ -180,21 +193,31 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD save_variant.
+    DATA temp1 TYPE z2ui5_t_13.
+    DATA temp2 LIKE temp1-uname.
 
     ms_variant_save-t_filter = ms_result-t_filter.
     INSERT ms_variant_save INTO TABLE mt_variant.
 
     " "User specific" decides who sees the variant: saved with the user
     " name only the user, saved without one everybody
-    z2ui5_cl_sel_var_db=>db_save( s_info = VALUE #( uname     = COND #( WHEN ms_variant_save-check_user = abap_true
-                                                                        THEN sy-uname )
-                                                    name      = ms_variant_save-name
-                                                    descr     = ms_variant_save-description
-                                                    check_def = ms_variant_save-check_default
-                                                    check_usr = ms_variant_save-check_user
-                                                    handle01  = ms_variant-handle1
-                                                    handle02  = ms_variant-handle2
-                                                    handle03  = ms_variant-handle3 )
+
+    CLEAR temp1.
+
+    IF ms_variant_save-check_user = abap_true.
+      temp2 = sy-uname.
+    ELSE.
+      CLEAR temp2.
+    ENDIF.
+    temp1-uname = temp2.
+    temp1-name = ms_variant_save-name.
+    temp1-descr = ms_variant_save-description.
+    temp1-check_def = ms_variant_save-check_default.
+    temp1-check_usr = ms_variant_save-check_user.
+    temp1-handle01 = ms_variant-handle1.
+    temp1-handle02 = ms_variant-handle2.
+    temp1-handle03 = ms_variant-handle3.
+    z2ui5_cl_sel_var_db=>db_save( s_info = temp1
                                   data   = s_variant ).
 
   ENDMETHOD.

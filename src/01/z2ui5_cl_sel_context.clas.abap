@@ -57,7 +57,7 @@ CLASS z2ui5_cl_sel_context DEFINITION
         v TYPE string,
       END OF ty_s_name_value.
 
-    TYPES ty_t_name_value TYPE STANDARD TABLE OF ty_s_name_value WITH EMPTY KEY.
+    TYPES ty_t_name_value TYPE STANDARD TABLE OF ty_s_name_value WITH DEFAULT KEY.
 
     TYPES:
       BEGIN OF ty_s_token,
@@ -68,7 +68,7 @@ CLASS z2ui5_cl_sel_context DEFINITION
         editable TYPE abap_bool,
       END OF ty_s_token.
 
-    TYPES ty_t_token TYPE STANDARD TABLE OF ty_s_token WITH EMPTY KEY.
+    TYPES ty_t_token TYPE STANDARD TABLE OF ty_s_token WITH DEFAULT KEY.
 
     TYPES:
       BEGIN OF ty_s_range,
@@ -78,7 +78,7 @@ CLASS z2ui5_cl_sel_context DEFINITION
         high   TYPE string,
       END OF ty_s_range.
 
-    TYPES ty_t_range TYPE STANDARD TABLE OF ty_s_range WITH EMPTY KEY.
+    TYPES ty_t_range TYPE STANDARD TABLE OF ty_s_range WITH DEFAULT KEY.
 
     TYPES:
       BEGIN OF ty_s_filter_multi,
@@ -89,7 +89,7 @@ CLASS z2ui5_cl_sel_context DEFINITION
         t_token_removed TYPE ty_t_token,
       END OF ty_s_filter_multi.
 
-    TYPES ty_t_filter_multi TYPE STANDARD TABLE OF ty_s_filter_multi WITH EMPTY KEY.
+    TYPES ty_t_filter_multi TYPE STANDARD TABLE OF ty_s_filter_multi WITH DEFAULT KEY.
 
     " depth guards the mutual recursion between these two (an include whose
     " expansion reaches itself would otherwise be an unbounded stack).
@@ -259,6 +259,7 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD c_trim.
+      DATA lv_before LIKE result.
 
     result = val.
     " spaces and tabs alternate at either end (`\t \tx`) - one pass of each
@@ -267,7 +268,8 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " standing. Every pass that changes something shortens the string, so
     " the loop ends
     DO.
-      DATA(lv_before) = result.
+
+      lv_before = result.
       result = shift_left( shift_right( result ) ).
       result = shift_right( val = result
                             sub = cv_char_util_horizontal_tab ).
@@ -283,12 +285,16 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
   METHOD filter_itab.
 
     DATA ref TYPE REF TO data.
+      DATA ls_filter LIKE LINE OF filter.
+        FIELD-SYMBOLS <field> TYPE any.
 
     LOOP AT val REFERENCE INTO ref.
 
-      LOOP AT filter INTO DATA(ls_filter).
 
-        ASSIGN ref->(ls_filter-name) TO FIELD-SYMBOL(<field>).
+      LOOP AT filter INTO ls_filter.
+
+
+        ASSIGN ref->(ls_filter-name) TO <field>.
         IF sy-subrc <> 0.
           CONTINUE.
         ENDIF.
@@ -305,34 +311,89 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   METHOD filter_get_multi_by_data.
 
-    LOOP AT rtti_get_t_attri_by_any( val ) REFERENCE INTO DATA(lr_comp).
-      INSERT VALUE #( name = lr_comp->name ) INTO TABLE result.
+    DATA temp1 TYPE abap_component_tab.
+    DATA temp3 LIKE LINE OF temp1.
+    DATA lr_comp LIKE REF TO temp3.
+      DATA temp2 TYPE z2ui5_cl_sel_context=>ty_s_filter_multi.
+    temp1 = rtti_get_t_attri_by_any( val ).
+
+
+    LOOP AT temp1 REFERENCE INTO lr_comp.
+
+      CLEAR temp2.
+      temp2-name = lr_comp->name.
+      INSERT temp2 INTO TABLE result.
     ENDLOOP.
 
   ENDMETHOD.
 
   METHOD filter_get_token_range_mapping.
 
-    result = VALUE #( (   n = `EQ`      v = `={LOW}` )
-                      (   n = `LT`      v = `<{LOW}` )
-                      (   n = `LE`      v = `<={LOW}` )
-                      (   n = `GT`      v = `>{LOW}` )
-                      (   n = `GE`      v = `>={LOW}` )
-                      (   n = `CP`      v = `*{LOW}*` )
-                      (   n = `BT`      v = `{LOW}...{HIGH}` )
-                      (   n = `NB`      v = `!({LOW}...{HIGH})` )
-                      (   n = `NE`      v = `!(={LOW})` )
-                      (   n = `NP`      v = `!(*{LOW}*)` )
-                      (   n = `!<leer>` v = `!(<leer>)` )
-                      (   n = `<leer>`  v = `<leer>` ) ).
+    DATA temp3 TYPE z2ui5_cl_sel_context=>ty_t_name_value.
+    DATA temp4 LIKE LINE OF temp3.
+    CLEAR temp3.
+
+    temp4-n = `EQ`.
+    temp4-v = `={LOW}`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `LT`.
+    temp4-v = `<{LOW}`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `LE`.
+    temp4-v = `<={LOW}`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `GT`.
+    temp4-v = `>{LOW}`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `GE`.
+    temp4-v = `>={LOW}`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `CP`.
+    temp4-v = `*{LOW}*`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `BT`.
+    temp4-v = `{LOW}...{HIGH}`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `NB`.
+    temp4-v = `!({LOW}...{HIGH})`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `NE`.
+    temp4-v = `!(={LOW})`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `NP`.
+    temp4-v = `!(*{LOW}*)`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `!<leer>`.
+    temp4-v = `!(<leer>)`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-n = `<leer>`.
+    temp4-v = `<leer>`.
+    INSERT temp4 INTO TABLE temp3.
+    result = temp3.
 
   ENDMETHOD.
 
   METHOD filter_get_token_t_by_range_t.
 
-    DATA(lt_mapping) = filter_get_token_range_mapping( ).
-
+    DATA lt_mapping TYPE z2ui5_cl_sel_context=>ty_t_name_value.
     DATA lt_tab TYPE ty_t_range.
+    FIELD-SYMBOLS <lt_source> TYPE ANY TABLE.
+    FIELD-SYMBOLS <ls_range> TYPE ty_s_range.
+    FIELD-SYMBOLS <lv_part> TYPE any.
+      DATA lv_index TYPE i.
+      FIELD-SYMBOLS <ls_source> TYPE ANY.
+    DATA temp5 LIKE LINE OF lt_tab.
+    DATA lr_row LIKE REF TO temp5.
+      DATA lv_option TYPE string.
+      DATA lv_value TYPE string.
+      DATA temp6 TYPE string.
+      DATA temp7 TYPE z2ui5_cl_sel_context=>ty_s_name_value.
+        FIELD-SYMBOLS <temp8> LIKE LINE OF lt_mapping.
+        DATA temp9 LIKE sy-tabix.
+      DATA temp10 TYPE z2ui5_cl_sel_context=>ty_s_token.
+    lt_mapping = filter_get_token_range_mapping( ).
+
+
 
     itab_corresponding( EXPORTING val = val
                         CHANGING  tab = lt_tab ).
@@ -342,13 +403,15 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " - sign behind it and padded (`5- `), so a select-option on an integer
     " field showed `=42 ` and `5-...10 `
     " UNASSIGN + IS ASSIGNED, not sy-subrc, in the loop (#1937)
-    FIELD-SYMBOLS <lt_source> TYPE ANY TABLE.
-    FIELD-SYMBOLS <ls_range>  TYPE ty_s_range.
-    FIELD-SYMBOLS <lv_part>   TYPE any.
+
+
+
     ASSIGN val TO <lt_source>.
     IF <lt_source> IS ASSIGNED.
-      DATA(lv_index) = 0.
-      LOOP AT <lt_source> ASSIGNING FIELD-SYMBOL(<ls_source>).
+
+      lv_index = 0.
+
+      LOOP AT <lt_source> ASSIGNING <ls_source>.
         lv_index = lv_index + 1.
         READ TABLE lt_tab INDEX lv_index ASSIGNING <ls_range>.
         IF sy-subrc <> 0.
@@ -367,18 +430,35 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
       ENDLOOP.
     ENDIF.
 
-    LOOP AT lt_tab REFERENCE INTO DATA(lr_row).
+
+
+    LOOP AT lt_tab REFERENCE INTO lr_row.
 
       " an option the mapping does not know - initial (a row appended with
       " sign and low only) or lower-case - used to raise a raw
       " CX_SY_ITAB_LINE_NOT_FOUND out of the whole call; it renders as the
       " equality token, which is what a range row without an option means
-      DATA lv_option TYPE string.
-      DATA lv_value  TYPE string.
+
+
       lv_option = to_upper( lr_row->option ).
-      lv_value = VALUE #( lt_mapping[ n = lv_option ]-v OPTIONAL ). "#EC CI_SORTSEQ
+
+      CLEAR temp6.
+
+      READ TABLE lt_mapping INTO temp7 WITH KEY n = lv_option.
+      IF sy-subrc = 0.
+        temp6 = temp7-v.
+      ENDIF.
+      lv_value = temp6. "#EC CI_SORTSEQ
       IF lv_value IS INITIAL.
-        lv_value = lt_mapping[ n = `EQ` ]-v. "#EC CI_SORTSEQ
+
+
+        temp9 = sy-tabix.
+        READ TABLE lt_mapping WITH KEY n = `EQ` ASSIGNING <temp8>.
+        sy-tabix = temp9.
+        IF sy-subrc <> 0.
+          ASSERT 1 = 0.
+        ENDIF.
+        lv_value = <temp8>-v. "#EC CI_SORTSEQ
       ENDIF.
       lv_value = filter_token_fill( template = lv_value
                                     low      = lr_row->low
@@ -390,10 +470,13 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
         lv_value = |!({ lv_value })|.
       ENDIF.
 
-      INSERT VALUE #( key      = lv_value
-                      text     = lv_value
-                      visible  = abap_true
-                      editable = abap_true ) INTO TABLE result.
+
+      CLEAR temp10.
+      temp10-key = lv_value.
+      temp10-text = lv_value.
+      temp10-visible = abap_true.
+      temp10-editable = abap_true.
+      INSERT temp10 INTO TABLE result.
     ENDLOOP.
 
   ENDMETHOD.
@@ -413,9 +496,11 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " back the object already in hand - or fail for a local include type
     " whose absolute name does not resolve, where the direct cast cannot
     DATA sdescr TYPE REF TO cl_abap_structdescr.
+        DATA lx_cast TYPE REF TO cx_sy_move_cast_error.
     TRY.
         sdescr ?= type.
-      CATCH cx_sy_move_cast_error INTO DATA(lx_cast).
+
+      CATCH cx_sy_move_cast_error INTO lx_cast.
         RAISE EXCEPTION TYPE z2ui5_cx_sel_error
           EXPORTING
             val      = |Include type '{ type->absolute_name }' is not a structure|
@@ -427,6 +512,11 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD expand_components.
+    DATA temp11 LIKE LINE OF val.
+    DATA lr_comp LIKE REF TO temp11.
+        DATA lt_include TYPE abap_component_tab.
+          DATA temp12 LIKE LINE OF lt_include.
+          DATA lr_include LIKE REF TO temp12.
 
     " see the declaration: bounded so a cyclic include chain surfaces as a
     " readable error instead of a stack-overflow dump. 16 nested include
@@ -437,16 +527,21 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
           val = `RTTI_INCLUDE_RECURSION - include expansion exceeded 16 levels (cyclic include?)`.
     ENDIF.
 
-    LOOP AT val REFERENCE INTO DATA(lr_comp).
+
+
+    LOOP AT val REFERENCE INTO lr_comp.
       IF lr_comp->as_include = abap_true.
         " INCLUDE ... RENAMING WITH SUFFIX: the structure's components are
         " named <component><suffix>, and every nested level adds its own -
         " the bare include names do not exist on the structure, so a
         " binding path or ASSIGN COMPONENT built from them fails
-        DATA(lt_include) = rtti_get_t_attri_by_include( type  = lr_comp->type
+
+        lt_include = rtti_get_t_attri_by_include( type  = lr_comp->type
                                                         depth = depth + 1 ).
         IF lr_comp->suffix IS NOT INITIAL.
-          LOOP AT lt_include REFERENCE INTO DATA(lr_include).
+
+
+          LOOP AT lt_include REFERENCE INTO lr_include.
             lr_include->name = lr_include->name && lr_comp->suffix.
           ENDLOOP.
         ENDIF.
@@ -464,6 +559,11 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     DATA lo_type          TYPE REF TO cl_abap_typedescr.
     " declared, not CONV string( ) - see error_get_attributes
     DATA lv_absolute_name TYPE string.
+        DATA temp13 TYPE REF TO cl_abap_structdescr.
+        DATA temp14 TYPE REF TO cl_abap_structdescr.
+        DATA temp4 TYPE REF TO cl_abap_tabledescr.
+    DATA lr_cache TYPE REF TO z2ui5_cl_sel_context=>ty_s_attri_cache.
+      DATA temp15 TYPE z2ui5_cl_sel_context=>ty_s_attri_cache.
 
     " describe_by_data never fails for a data object, and the reference case
     " is the one branch. The fallback chain that used to sit here - a second
@@ -477,9 +577,15 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
     CASE lo_type->kind.
       WHEN cl_abap_typedescr=>kind_struct.
-        lo_struct = CAST #( lo_type ).
+
+        temp13 ?= lo_type.
+        lo_struct = temp13.
       WHEN cl_abap_typedescr=>kind_table.
-        lo_struct = CAST #( CAST cl_abap_tabledescr( lo_type )->get_table_line_type( ) ).
+
+
+        temp4 ?= lo_type.
+        temp14 ?= temp4->get_table_line_type( ).
+        lo_struct = temp14.
       WHEN OTHERS.
         lo_struct ?= lo_type.
     ENDCASE.
@@ -487,7 +593,8 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " descriptor instances are singletons per type, so the identity check
     " guards against absolute names reused by other (local/anonymous) types
     lv_absolute_name = lo_struct->absolute_name.
-    READ TABLE mt_attri_cache REFERENCE INTO DATA(lr_cache)
+
+    READ TABLE mt_attri_cache REFERENCE INTO lr_cache
          WITH TABLE KEY absolute_name = lv_absolute_name.
     IF sy-subrc = 0 AND lr_cache->o_struct = lo_struct.
       result = lr_cache->t_attri.
@@ -500,9 +607,12 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
       lr_cache->o_struct = lo_struct.
       lr_cache->t_attri  = result.
     ELSE.
-      INSERT VALUE #( absolute_name = lv_absolute_name
-                      o_struct      = lo_struct
-                      t_attri       = result ) INTO TABLE mt_attri_cache.
+
+      CLEAR temp15.
+      temp15-absolute_name = lv_absolute_name.
+      temp15-o_struct = lo_struct.
+      temp15-t_attri = result.
+      INSERT temp15 INTO TABLE mt_attri_cache.
     ENDIF.
 
   ENDMETHOD.
@@ -530,6 +640,16 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD rtti_get_t_attri_by_table_name.
+        DATA lo_obj TYPE REF TO cl_abap_typedescr.
+        DATA temp16 TYPE REF TO cl_abap_structdescr.
+        DATA lo_struct LIKE temp16.
+            DATA temp17 TYPE REF TO cl_abap_tabledescr.
+            DATA lo_tab LIKE temp17.
+            DATA temp18 TYPE REF TO cl_abap_structdescr.
+    DATA lt_comps TYPE abap_component_tab.
+    DATA temp19 LIKE LINE OF lt_comps.
+    DATA lr_comp LIKE REF TO temp19.
+        DATA lt_attri TYPE abap_component_tab.
 
     IF table_name IS INITIAL.
       RAISE EXCEPTION TYPE z2ui5_cx_sel_error
@@ -538,8 +658,9 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     ENDIF.
 
     TRY.
+
         cl_abap_structdescr=>describe_by_name( EXPORTING  p_name         = table_name
-                                               RECEIVING  p_descr_ref    = DATA(lo_obj)
+                                               RECEIVING  p_descr_ref    = lo_obj
                                                EXCEPTIONS type_not_found = 1
                                                           OTHERS         = 2
             ).
@@ -549,7 +670,10 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
             EXPORTING
               val = |TABLE_NOT_FOUND_NAME___{ table_name }|.
         ENDIF.
-        DATA(lo_struct) = CAST cl_abap_structdescr( lo_obj ).
+
+        temp16 ?= lo_obj.
+
+        lo_struct = temp16.
 
       CATCH cx_root.
 
@@ -565,19 +689,28 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
                   val = |TABLE_NOT_FOUND_NAME___{ table_name }|.
             ENDIF.
 
-            DATA(lo_tab) = CAST cl_abap_tabledescr( lo_obj ).
-            lo_struct = CAST cl_abap_structdescr( lo_tab->get_table_line_type( ) ).
+
+            temp17 ?= lo_obj.
+
+            lo_tab = temp17.
+
+            temp18 ?= lo_tab->get_table_line_type( ).
+            lo_struct = temp18.
           CATCH cx_root.
             RETURN.
         ENDTRY.
 
     ENDTRY.
 
-    DATA(lt_comps) = lo_struct->get_components( ).
 
-    LOOP AT lt_comps REFERENCE INTO DATA(lr_comp).
+    lt_comps = lo_struct->get_components( ).
+
+
+
+    LOOP AT lt_comps REFERENCE INTO lr_comp.
       IF lr_comp->as_include = abap_true.
-        DATA(lt_attri) = rtti_get_t_attri_by_include( lr_comp->type ).
+
+        lt_attri = rtti_get_t_attri_by_include( lr_comp->type ).
         INSERT LINES OF lt_attri INTO TABLE result.
       ELSE.
         INSERT lr_comp->* INTO TABLE result.
@@ -600,7 +733,16 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   METHOD filter_get_sql_where.
 
-    LOOP AT val INTO DATA(ls_filter).
+    DATA ls_filter LIKE LINE OF val.
+      DATA lv_include TYPE string.
+      DATA lv_exclude TYPE string.
+      DATA ls_range LIKE LINE OF ls_filter-t_range.
+        DATA lv_cond TYPE string.
+          DATA temp20 TYPE string.
+          DATA temp21 TYPE string.
+      DATA temp22 TYPE string.
+      DATA lv_field_where LIKE temp22.
+    LOOP AT val INTO ls_filter.
 
       IF ls_filter-t_range IS INITIAL.
         CONTINUE.
@@ -621,29 +763,47 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
       " already negated (filter_get_sql_cond_by_range), so the includes are
       " joined with OR and the excludes with AND - OR-ing them too let
       " every row through that missed a single exclude
-      DATA(lv_include) = ``.
-      DATA(lv_exclude) = ``.
-      LOOP AT ls_filter-t_range INTO DATA(ls_range).
-        DATA(lv_cond) = filter_get_sql_cond_by_range( fieldname = ls_filter-name
+
+      lv_include = ``.
+
+      lv_exclude = ``.
+
+      LOOP AT ls_filter-t_range INTO ls_range.
+
+        lv_cond = filter_get_sql_cond_by_range( fieldname = ls_filter-name
                                                       range     = ls_range ).
         IF lv_cond IS INITIAL.
           CONTINUE.
         ENDIF.
         IF ls_range-sign = `E`.
-          lv_exclude = COND #( WHEN lv_exclude IS INITIAL THEN lv_cond
-                               ELSE |{ lv_exclude } AND { lv_cond }| ).
+
+          IF lv_exclude IS INITIAL.
+            temp20 = lv_cond.
+          ELSE.
+            temp20 = |{ lv_exclude } AND { lv_cond }|.
+          ENDIF.
+          lv_exclude = temp20.
         ELSE.
-          lv_include = COND #( WHEN lv_include IS INITIAL THEN lv_cond
-                               ELSE |{ lv_include } OR { lv_cond }| ).
+
+          IF lv_include IS INITIAL.
+            temp21 = lv_cond.
+          ELSE.
+            temp21 = |{ lv_include } OR { lv_cond }|.
+          ENDIF.
+          lv_include = temp21.
         ENDIF.
       ENDLOOP.
 
-      DATA(lv_field_where) = COND string(
-        WHEN lv_include IS NOT INITIAL AND lv_exclude IS NOT INITIAL
-        THEN |( { lv_include } ) AND { lv_exclude }|
-        WHEN lv_include IS NOT INITIAL
-        THEN lv_include
-        ELSE lv_exclude ).
+
+      IF lv_include IS NOT INITIAL AND lv_exclude IS NOT INITIAL.
+        temp22 = |( { lv_include } ) AND { lv_exclude }|.
+      ELSEIF lv_include IS NOT INITIAL.
+        temp22 = lv_include.
+      ELSE.
+        temp22 = lv_exclude.
+      ENDIF.
+
+      lv_field_where = temp22.
 
       IF lv_field_where IS INITIAL.
         CONTINUE.
@@ -661,15 +821,21 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   METHOD filter_get_sql_cond_by_range.
 
-    DATA(lv_low) = replace( val  = range-low
+    DATA lv_low TYPE string.
+    DATA lv_high TYPE string.
+    DATA lv_option LIKE range-option.
+    DATA lv_like TYPE string.
+    lv_low = replace( val  = range-low
                             sub  = `'`
                             with = `''`
                             occ  = 0 ).
-    DATA(lv_high) = replace( val  = range-high
+
+    lv_high = replace( val  = range-high
                              sub  = `'`
                              with = `''`
                              occ  = 0 ).
-    DATA(lv_option) = range-option.
+
+    lv_option = range-option.
 
     IF range-sign = `E`.
       CASE lv_option.
@@ -688,7 +854,8 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
     " CP: only * and + are wildcards - a _ or % the user typed is a plain
     " character, as in an IN range, so it is escaped
-    DATA(lv_like) = replace( val  = lv_low
+
+    lv_like = replace( val  = lv_low
                              sub  = `#`
                              with = `##`
                              occ  = 0 ).
@@ -740,6 +907,9 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " name ends in a short dump no CATCH stops - so it is handled here and
     " the caller gets an unbound reference instead
     DATA lo_type TYPE REF TO cl_abap_typedescr.
+    DATA temp23 TYPE REF TO cl_abap_datadescr.
+    DATA data_desc LIKE temp23.
+    DATA gr_dyntable_typ TYPE REF TO cl_abap_tabledescr.
     cl_abap_typedescr=>describe_by_name( EXPORTING  p_name         = val
                                          RECEIVING  p_descr_ref    = lo_type
                                          EXCEPTIONS type_not_found = 1
@@ -752,8 +922,12 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     IF lo_type->kind = cl_abap_typedescr=>kind_class OR lo_type->kind = cl_abap_typedescr=>kind_intf.
       RETURN.
     ENDIF.
-    DATA(data_desc) = CAST cl_abap_datadescr( lo_type ).
-    DATA(gr_dyntable_typ) = cl_abap_tabledescr=>create( data_desc ).
+
+    temp23 ?= lo_type.
+
+    data_desc = temp23.
+
+    gr_dyntable_typ = cl_abap_tabledescr=>create( data_desc ).
     CREATE DATA result TYPE HANDLE gr_dyntable_typ.
 
   ENDMETHOD.
@@ -794,6 +968,7 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     DATA lv_uuid      TYPE c LENGTH 32.
     DATA lv_classname TYPE string.
     DATA lv_fm        TYPE string.
+        DATA lx_uuid TYPE REF TO cx_root.
 
     TRY.
 
@@ -815,7 +990,8 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
         result = lv_uuid.
 
-      CATCH cx_root INTO DATA(lx_uuid).
+
+      CATCH cx_root INTO lx_uuid.
         " both UUID mechanisms failed - raise the framework exception so the
         " consumer's single top-level catch can turn it into a handled error.
         " ASSERT would raise the uncatchable ASSERTION_FAILED and bypass that

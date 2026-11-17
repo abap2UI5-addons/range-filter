@@ -4,7 +4,7 @@ CLASS z2ui5_cl_sel_var_db DEFINITION
 
   PUBLIC SECTION.
     TYPES ty_s_db TYPE z2ui5_t_13.
-    TYPES ty_t_db TYPE STANDARD TABLE OF z2ui5_t_13 WITH EMPTY KEY.
+    TYPES ty_t_db TYPE STANDARD TABLE OF z2ui5_t_13 WITH DEFAULT KEY.
 
     CLASS-METHODS db_read_default
       IMPORTING
@@ -31,6 +31,7 @@ ENDCLASS.
 CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
 
   METHOD db_read.
+      DATA lv_uname LIKE sy-uname.
 
     " the user's own variants and the ones saved for everybody (no user),
     " of exactly this caller - all three handles. The own ones also for a
@@ -38,32 +39,34 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
     " stores a variant under the user then, and db_read_default( ) applies
     " it - it has to be in the list as well
     IF s_info-uname IS INITIAL.
-      DATA(lv_uname) = sy-uname.
+
+      lv_uname = sy-uname.
     ELSE.
       lv_uname = s_info-uname.
     ENDIF.
 
-    SELECT * FROM z2ui5_t_13
-      WHERE ( uname = @lv_uname OR uname = @space )
-        AND handle01 = @s_info-handle01
-        AND handle02 = @s_info-handle02
-        AND handle03 = @s_info-handle03
-      INTO CORRESPONDING FIELDS OF TABLE @result.
+    SELECT * FROM z2ui5_t_13 INTO CORRESPONDING FIELDS OF TABLE result
+      WHERE ( uname = lv_uname OR uname = space )
+        AND handle01 = s_info-handle01
+        AND handle02 = s_info-handle02
+        AND handle03 = s_info-handle03
+      .
 
   ENDMETHOD.
 
   METHOD db_save.
 
-    DATA(ls_db) = s_info.
+    DATA ls_db LIKE s_info.
+    ls_db = s_info.
 
     " saving under a name that exists replaces that variant
-    SELECT SINGLE uuid FROM z2ui5_t_13
-      WHERE uname    = @s_info-uname
-        AND handle01 = @s_info-handle01
-        AND handle02 = @s_info-handle02
-        AND handle03 = @s_info-handle03
-        AND name     = @s_info-name
-      INTO @ls_db-uuid. "#EC CI_NOORDER
+    SELECT SINGLE uuid FROM z2ui5_t_13 INTO ls_db-uuid
+      WHERE uname    = s_info-uname
+        AND handle01 = s_info-handle01
+        AND handle02 = s_info-handle02
+        AND handle03 = s_info-handle03
+        AND name     = s_info-name
+      . "#EC CI_NOORDER
     IF sy-subrc <> 0.
       ls_db-uuid = z2ui5_cl_sel_context=>uuid_get_c32( ).
     ENDIF.
@@ -73,46 +76,48 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
     " one default per scope - same user (or shared) and handles: a new
     " default takes the flag from the variant that had it
     IF ls_db-check_def = abap_true.
-      UPDATE z2ui5_t_13 SET check_def = @abap_false
-        WHERE uname    = @s_info-uname
-          AND handle01 = @s_info-handle01
-          AND handle02 = @s_info-handle02
-          AND handle03 = @s_info-handle03
-          AND uuid    <> @ls_db-uuid.
+      UPDATE z2ui5_t_13 SET check_def = abap_false
+        WHERE uname    = s_info-uname
+          AND handle01 = s_info-handle01
+          AND handle02 = s_info-handle02
+          AND handle03 = s_info-handle03
+          AND uuid    <> ls_db-uuid.
     ENDIF.
 
-    MODIFY z2ui5_t_13 FROM @ls_db.
+    MODIFY z2ui5_t_13 FROM ls_db.
     COMMIT WORK AND WAIT.
 
   ENDMETHOD.
 
   METHOD db_read_default.
+      DATA lv_uname LIKE sy-uname.
 
     IF s_info-uname IS INITIAL.
-      DATA(lv_uname) = sy-uname.
+
+      lv_uname = sy-uname.
     ELSE.
       lv_uname = s_info-uname.
     ENDIF.
 
-    SELECT SINGLE * FROM z2ui5_t_13
-      WHERE uname     = @lv_uname
-        AND handle01  = @s_info-handle01
-        AND handle02  = @s_info-handle02
-        AND handle03  = @s_info-handle03
-        AND check_def = @abap_true
-      INTO CORRESPONDING FIELDS OF @result. "#EC CI_NOORDER
+    SELECT SINGLE * FROM z2ui5_t_13 INTO CORRESPONDING FIELDS OF result
+      WHERE uname     = lv_uname
+        AND handle01  = s_info-handle01
+        AND handle02  = s_info-handle02
+        AND handle03  = s_info-handle03
+        AND check_def = abap_true
+      . "#EC CI_NOORDER
 
     IF sy-subrc = 0.
       RETURN.
     ENDIF.
 
-    SELECT SINGLE * FROM z2ui5_t_13
-      WHERE uname     = @space
-        AND handle01  = @s_info-handle01
-        AND handle02  = @s_info-handle02
-        AND handle03  = @s_info-handle03
-        AND check_def = @abap_true
-      INTO CORRESPONDING FIELDS OF @result. "#EC CI_NOORDER
+    SELECT SINGLE * FROM z2ui5_t_13 INTO CORRESPONDING FIELDS OF result
+      WHERE uname     = space
+        AND handle01  = s_info-handle01
+        AND handle02  = s_info-handle02
+        AND handle03  = s_info-handle03
+        AND check_def = abap_true
+      . "#EC CI_NOORDER
 
   ENDMETHOD.
 
