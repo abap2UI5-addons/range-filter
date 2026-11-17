@@ -119,6 +119,7 @@ ENDIF.
 |---|---|
 | `z2ui5_cl_sel_multisel` | select-options for a table name (`factory_by_name`), for data (`factory_by_data`) or for a filter (`factory_by_filter`); renders into your view with `set_output( )`, handles its events in `main( )` |
 | `z2ui5_cl_sel_multisel_pop` | the same as a popup app; returns the filter with `result( )` |
+| `z2ui5_cl_sel_range_pop` | the popup that edits the ranges of one field (opened by the two above) |
 | `z2ui5_cl_sel_var_pop_read`, `z2ui5_cl_sel_var_pop_save` | popups to load and save a variant |
 | `z2ui5_cl_sel_var_db` | variant persistence in table `z2ui5_t_13` |
 | `z2ui5_cl_sel_context` | the helpers: `filter_get_sql_where( )`, `filter_itab( )`, RTTI |
