@@ -11,10 +11,11 @@ npm ci
 npm run check
 ```
 
-`npm run check` is the same set of steps the workflows run on a pull request,
-so a green run locally is a green run there. `npm test` is an alias for it —
-this repository has no separate unit-test suite; its ABAP is checked, not
-executed.
+`npm run check` is the lint, linter and rename steps the workflows run on a
+pull request. `npm test` is an alias for it. The ABAP Unit tests of
+`z2ui5_cl_sel_range_pop` run separately with `npm run unit` - on abap2UI5's
+transpiled Node runtime, no SAP system (`.github/scripts/unit.mjs`); CI runs
+them too.
 
 ## What the gates are
 
@@ -24,6 +25,7 @@ executed.
 | `npm run check:cloud` | the same source compiles under ABAP Cloud restrictions |
 | `npm run check:abap2ui5` | [abap2UI5-linter](https://github.com/abap2UI5/linter): the app class and the view it builds, judged together — controls, members, bindings, the UI5 version floor, and a headless render of every view |
 | `npm run rename` | the namespace rename still applies cleanly |
+| `npm run unit` | the ABAP Unit tests of the range popup pass on the transpiled runtime (CI only, not part of `npm run check`) |
 
 The abap2UI5-linter keeps a baseline in `abap2ui5lint-baseline.json`. Findings
 recorded there are counted and never listed; a **new** finding fails the gate,
