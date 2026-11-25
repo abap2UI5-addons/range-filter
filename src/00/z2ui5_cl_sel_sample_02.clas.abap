@@ -37,7 +37,6 @@ CLASS z2ui5_cl_sel_sample_02 IMPLEMENTATION.
     CASE client->get( )-event.
       WHEN `BUTTON_START`.
         set_data( ).
-        client->view_model_update( ).
       WHEN `PREVIEW_FILTER`.
         client->nav_app_call( mo_variant ).
       WHEN `BACK`.
@@ -154,7 +153,6 @@ CLASS z2ui5_cl_sel_sample_02 IMPLEMENTATION.
           IF lo_value_help->result( )-check_confirmed = abap_true.
             mo_variant->mo_multiselect->ms_result-t_filter = lo_value_help->result( )-t_filter.
             set_data( ).
-            client->view_model_update( ).
           ENDIF.
         CATCH cx_root ##NO_HANDLER.
       ENDTRY.

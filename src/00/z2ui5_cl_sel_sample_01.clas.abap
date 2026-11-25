@@ -29,7 +29,6 @@ CLASS z2ui5_cl_sel_sample_01 IMPLEMENTATION.
 
       WHEN `BUTTON_START`.
         set_data( ).
-        client->view_model_update( ).
 
       WHEN `BACK`.
         client->nav_app_leave( ).
@@ -85,7 +84,7 @@ CLASS z2ui5_cl_sel_sample_01 IMPLEMENTATION.
 
     DATA(lo_panel) = vbox->ele( `Panel`
                          )->a( n = `expandable` b = abap_true
-                         )->a( n = `expanded` v = client->_bind_edit( mv_expanded )
+                         )->a( n = `expanded` v = client->_bind( mv_expanded )
                          )->a( n = `headerText` v = `Selection Screen` ).
 
     mo_multiselect->set_output( client = client
