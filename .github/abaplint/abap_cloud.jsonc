@@ -11,7 +11,7 @@
       {
         "url": "https://github.com/abap2UI5/abap2UI5",
         "folder": "/abap2UI5",
-        "files": "/src/**/*.*"
+        "files": "/src/0[0-2]/**/*.*"
       }
     ],
     "syntax": {
