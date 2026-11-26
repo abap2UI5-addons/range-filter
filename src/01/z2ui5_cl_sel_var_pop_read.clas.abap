@@ -122,7 +122,7 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
     dialog->ele( `Table`
         )->a( n = `mode` v = `SingleSelectLeft`
-        )->a( n = `items` v = client->_bind_edit( mt_variant )
+        )->a( n = `items` v = client->_bind( mt_variant )
         )->ele( `columns`
         )->ele( `Column`
         )->tag( `Text`

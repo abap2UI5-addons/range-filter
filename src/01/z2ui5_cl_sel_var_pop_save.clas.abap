@@ -115,11 +115,11 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
         )->tag( `Label`
         )->a( n = `text` v = `Variant`
         )->tag( `Input`
-        )->a( n = `value` v = client->_bind_edit( ms_variant_save-name )
+        )->a( n = `value` v = client->_bind( ms_variant_save-name )
         )->tag( `Label`
         )->a( n = `text` v = `Description`
         )->tag( `Input`
-        )->a( n = `value` v = client->_bind_edit( ms_variant_save-description ) ).
+        )->a( n = `value` v = client->_bind( ms_variant_save-description ) ).
 
     form->ele( `Toolbar`
         )->tag( `Title`
@@ -130,12 +130,12 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
         )->a( n = `text` v = `Default Variant`
         )->tag( `Switch`
         )->a( n = `type` v = `AcceptReject`
-        )->a( n = `state` v = client->_bind_edit( ms_variant_save-check_default )
+        )->a( n = `state` v = client->_bind( ms_variant_save-check_default )
         )->tag( `Label`
         )->a( n = `text` v = `User specific`
         )->tag( `Switch`
         )->a( n = `type` v = `AcceptReject`
-        )->a( n = `state` v = client->_bind_edit( ms_variant_save-check_user ) ).
+        )->a( n = `state` v = client->_bind( ms_variant_save-check_user ) ).
 
     dialog->ele( `buttons`
         )->tag( `Button`

@@ -186,7 +186,6 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
             ASSIGN ms_result-t_filter[ name = mv_popup_name ] TO <tab>.
             <tab>-t_range = lo_popup->result( )-t_range.
             <tab>-t_token = z2ui5_cl_sel_context=>filter_get_token_t_by_range_t( <tab>-t_range ).
-            client->view_model_update( ).
           ENDIF.
           " handled on cancel too: the caller has to display its popup again,
           " and the range popup's BUTTON_CANCEL must not reach the caller's events
@@ -200,11 +199,6 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
 
             z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = ls_value-s_variant-data
                                       IMPORTING any = ms_result ).
-            IF mv_check_popup = abap_false.
-              client->view_model_update( ).
-            ELSE.
-              client->popup_model_update( ).
-            ENDIF.
 
           ENDIF.
           RETURN.
@@ -235,11 +229,6 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
           CLEAR <ls_filter>-t_range.
           CLEAR <ls_filter>-t_token.
         ENDIF.
-        IF mv_check_popup = abap_false.
-          client->view_model_update( ).
-        ELSE.
-          client->popup_model_update( ).
-        ENDIF.
 
       WHEN `BUTTON_LOAD`.
         DATA(lo_popup3) = z2ui5_cl_sel_var_pop_read=>factory( var_check_user = abap_true
@@ -261,11 +250,6 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
           CLEAR lr_sql->t_token.
           CLEAR lr_sql->t_range.
         ENDLOOP.
-        IF mv_check_popup = abap_false.
-          client->view_model_update( ).
-        ELSE.
-          client->popup_model_update( ).
-        ENDIF.
 
       WHEN OTHERS.
         result = abap_false.
