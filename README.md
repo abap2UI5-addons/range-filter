@@ -135,7 +135,9 @@ ENDIF.
 
 * Select-options for every field of a database table or an internal table
 * Ranges entered in a popup - inline in your page or as a filter popup
-* Variants saved and loaded - per app, optionally per user, with a default
+* Variants saved, loaded and deleted - per app, optionally per user, with a
+  default; saving over an existing variant asks first, and only the user's
+  own variants can be deleted
 
 ## What is there
 
@@ -144,7 +146,7 @@ ENDIF.
 | `z2ui5_cl_sel_multisel` | select-options for a table name (`factory_by_name`), for data (`factory_by_data`) or for a filter (`factory_by_filter`); renders into your view with `set_output( )`, handles its events in `main( )` |
 | `z2ui5_cl_sel_multisel_pop` | the same as a popup app; returns the filter with `result( )` |
 | `z2ui5_cl_sel_range_pop` | the popup that edits the ranges of one field (opened by the two above) |
-| `z2ui5_cl_sel_var_pop_read`, `z2ui5_cl_sel_var_pop_save` | popups to load and save a variant |
+| `z2ui5_cl_sel_var_pop_read`, `z2ui5_cl_sel_var_pop_save` | popups to load (and delete) and save a variant |
 | `z2ui5_cl_sel_var_db` | variant persistence in table `z2ui5_t_13` |
 
 ## range-filter or abap-cloud-gui?
