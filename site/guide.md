@@ -56,7 +56,6 @@ METHOD z2ui5_if_app~main.
 
   IF client->check_on_event( `GO` ).
     read_data( ).
-    client->view_model_update( ).
   ENDIF.
 
 ENDMETHOD.

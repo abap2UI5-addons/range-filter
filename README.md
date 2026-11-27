@@ -105,7 +105,6 @@ METHOD z2ui5_if_app~main.
   IF client->check_on_event( `GO` ).
     DATA(lv_where) = z2ui5_cl_sel_context=>filter_get_sql_where( mo_multiselect->ms_result-t_filter ).
     SELECT FROM t100 FIELDS * WHERE (lv_where) INTO TABLE @mt_t100 UP TO 100 ROWS.
-    client->view_model_update( ).
   ENDIF.
 
 ENDMETHOD.
