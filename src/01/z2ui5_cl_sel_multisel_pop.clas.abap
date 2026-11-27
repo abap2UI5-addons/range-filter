@@ -112,6 +112,13 @@ CLASS z2ui5_cl_sel_multisel_pop IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    IF client->check_on_navigated( ).
+      " a restored draft (browser Forward, a reload): the popup went with
+      " the page - show it again
+      popup_display( ).
+      RETURN.
+    ENDIF.
+
     CASE client->get( )-event.
 
       WHEN `BUTTON_CONFIRM`.
