@@ -28,6 +28,7 @@ CLASS z2ui5_cl_sel_var_pop_read DEFINITION
 
     DATA mt_variant      TYPE ty_t_variant_out.
 
+    " not used by the popup - deprecated, kept for callers that read it
     DATA ms_variant_save TYPE ty_s_variant_out.
 
     CLASS-METHODS factory
@@ -69,6 +70,18 @@ CLASS z2ui5_cl_sel_var_pop_read DEFINITION
     METHODS db_read.
 
   PRIVATE SECTION.
+    "! the selection of a variant - the XML z2ui5_cl_sel_var_pop_save stored
+    CLASS-METHODS get_filter
+      IMPORTING
+        s_variant     TYPE z2ui5_cl_sel_var_db=>ty_s_db
+      RETURNING
+        VALUE(result) TYPE z2ui5_cl_sel_context=>ty_t_filter_multi.
+
+    METHODS on_event_confirm.
+
+    "! deletes the selected variant - one of the current user only
+    METHODS on_event_delete.
+
 ENDCLASS.
 
 
@@ -154,6 +167,10 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
         )->a( n = `icon` v = `sap-icon://sys-cancel`
         )->a( n = `press` v = client->_event( `CANCEL` )
         )->tag( `Button`
+        )->a( n = `text` v = `Delete`
+        )->a( n = `icon` v = `sap-icon://delete`
+        )->a( n = `press` v = client->_event( `DELETE` )
+        )->tag( `Button`
         )->a( n = `text` v = `Open`
         )->a( n = `icon` v = `sap-icon://accept`
         )->a( n = `press` v = client->_event( `CONFIRM` )
@@ -182,22 +199,68 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
         client->nav_app_leave( ).
 
       WHEN `CONFIRM`.
-        IF NOT line_exists( mt_variant[ selkz = abap_true ] ).
-          client->message_toast_display( `Select a variant first` ).
-          RETURN.
-        ENDIF.
-        DATA(ls_variant) = mt_variant[ selkz = abap_true ].
-        ms_result-check_confirmed = abap_true.
-        ms_result-s_variant       = ls_variant-s_db.
-        client->popup_destroy( ).
-        client->nav_app_leave( ).
+        on_event_confirm( ).
+
+      WHEN `DELETE`.
+        on_event_delete( ).
 
     ENDCASE.
   ENDMETHOD.
 
-  METHOD read_default.
+  METHOD on_event_confirm.
+
+    IF NOT line_exists( mt_variant[ selkz = abap_true ] ).
+      client->message_toast_display( `Select a variant first` ).
+      RETURN.
+    ENDIF.
+    DATA(ls_variant) = mt_variant[ selkz = abap_true ].
+    ms_result-check_confirmed = abap_true.
+    ms_result-s_variant       = ls_variant-s_db.
+    " the selection of the variant as well - result( )-t_filter was empty
+    ms_result-t_filter        = get_filter( ls_variant-s_db ).
+    client->popup_destroy( ).
+    client->nav_app_leave( ).
+
+  ENDMETHOD.
+
+  METHOD on_event_delete.
+
+    IF NOT line_exists( mt_variant[ selkz = abap_true ] ).
+      client->message_toast_display( `Select a variant first` ).
+      RETURN.
+    ENDIF.
+    DATA(ls_variant) = mt_variant[ selkz = abap_true ].
+
+    IF ls_variant-s_db-uname IS INITIAL.
+      client->message_toast_display( `A variant for all users cannot be deleted here` ).
+      RETURN.
+    ENDIF.
+
+    IF z2ui5_cl_sel_var_db=>db_delete( ls_variant-s_db-uuid ) = abap_false.
+      client->message_toast_display( `The variant could not be deleted` ).
+      RETURN.
+    ENDIF.
+
+    " the list anew - the popup shares the model, which goes out with the
+    " response
+    db_read( ).
+
+  ENDMETHOD.
+
+  METHOD get_filter.
 
     DATA ls_saved TYPE z2ui5_cl_sel_multisel=>ty_s_result.
+
+    TRY.
+        z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = s_variant-data
+                                         IMPORTING any = ls_saved ).
+        result = ls_saved-t_filter.
+      CATCH cx_root ##NO_HANDLER.
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD read_default.
 
     TRY.
 
@@ -212,9 +275,7 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
         ENDIF.
 
         " the data is the selection z2ui5_cl_sel_var_pop_save stored, as XML
-        z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = result-s_variant-data
-                                         IMPORTING any = ls_saved ).
-        result-t_filter = ls_saved-t_filter.
+        result-t_filter = get_filter( result-s_variant ).
 
       CATCH cx_root ##NO_HANDLER.
     ENDTRY.

@@ -31,6 +31,15 @@ CLASS z2ui5_cl_sel_var_db DEFINITION
       RETURNING
         VALUE(result) TYPE abap_bool.
 
+    "! deletes a variant of the current user. A variant saved for every user
+    "! (no user) is left: the table does not say who saved it, so nobody
+    "! could be told from everybody else
+    CLASS-METHODS db_delete
+      IMPORTING
+        uuid          TYPE z2ui5_t_13-uuid
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
     "! the variant of the name in s_info in its scope, initial when none
@@ -110,6 +119,21 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
         AND handle03 = @s_info-handle03
         AND name     = @s_info-name
       INTO @result. "#EC CI_NOORDER
+
+  ENDMETHOD.
+
+  METHOD db_delete.
+
+    IF uuid IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DELETE FROM z2ui5_t_13 WHERE uuid  = @uuid
+                             AND uname = @sy-uname.
+    result = xsdbool( sy-subrc = 0 ).
+    IF result = abap_true.
+      COMMIT WORK AND WAIT.
+    ENDIF.
 
   ENDMETHOD.
 
