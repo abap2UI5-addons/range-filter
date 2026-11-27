@@ -24,7 +24,7 @@ CLASS z2ui5_cl_sel_var_pop_read DEFINITION
         s_db       TYPE z2ui5_cl_sel_var_db=>ty_s_db,
         t_filter   TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
       END OF ty_s_variant_out.
-    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH EMPTY KEY.
+    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH DEFAULT KEY.
 
     "! the variants on screen - bound to the browser, so it carries only what
     "! the list shows (s_db-name, -descr, -check_def, -uname) and the
@@ -99,16 +99,28 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
   METHOD db_read.
 
-    mt_variant_db = z2ui5_cl_sel_var_db=>db_read( VALUE #( uname    = ms_variant-uname
-                                                           handle01 = ms_variant-handle1
-                                                           handle02 = ms_variant-handle2
-                                                           handle03 = ms_variant-handle3 ) ).
+    DATA temp1 TYPE z2ui5_t_13.
+    DATA temp2 LIKE LINE OF mt_variant_db.
+    DATA lr_var LIKE REF TO temp2.
+      DATA temp3 TYPE ty_s_variant_out.
+      DATA ls_var_out LIKE temp3.
+    CLEAR temp1.
+    temp1-uname = ms_variant-uname.
+    temp1-handle01 = ms_variant-handle1.
+    temp1-handle02 = ms_variant-handle2.
+    temp1-handle03 = ms_variant-handle3.
+    mt_variant_db = z2ui5_cl_sel_var_db=>db_read( temp1 ).
 
     " the list without each variant's selection XML: every row went to the
     " browser with it, writable, and CONFIRM took the variant from there
     CLEAR mt_variant.
-    LOOP AT mt_variant_db REFERENCE INTO DATA(lr_var).
-      DATA(ls_var_out) = VALUE ty_s_variant_out( ).
+
+
+    LOOP AT mt_variant_db REFERENCE INTO lr_var.
+
+      CLEAR temp3.
+
+      ls_var_out = temp3.
       ls_var_out-s_db-name      = lr_var->name.
       ls_var_out-s_db-descr     = lr_var->descr.
       ls_var_out-s_db-check_def = lr_var->check_def.
@@ -119,12 +131,20 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD factory.
+    DATA temp1 TYPE z2ui5_cl_sel_var_pop_read=>ty_s_variant-uname.
 
-    r_result = NEW #( ).
-    r_result->ms_variant = VALUE #( uname   = COND #( WHEN var_check_user = abap_true THEN sy-uname )
-                                    handle1 = var_handle1
-                                    handle2 = var_handle2
-                                    handle3 = var_handle3 ).
+    CREATE OBJECT r_result.
+    CLEAR r_result->ms_variant.
+
+    IF var_check_user = abap_true.
+      temp1 = sy-uname.
+    ELSE.
+      CLEAR temp1.
+    ENDIF.
+    r_result->ms_variant-uname = temp1.
+    r_result->ms_variant-handle1 = var_handle1.
+    r_result->ms_variant-handle2 = var_handle2.
+    r_result->ms_variant-handle3 = var_handle3.
 
   ENDMETHOD.
 
@@ -137,12 +157,15 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
   METHOD popup_variant_read.
 
-    DATA(popup) = z2ui5_cl_ui5_view_builder=>factory(
+    DATA popup TYPE REF TO z2ui5_cl_ui5_view_builder.
+    DATA dialog TYPE REF TO z2ui5_cl_ui5_view_builder.
+    popup = z2ui5_cl_ui5_view_builder=>factory(
                       )->ele( n = `FragmentDefinition` ns = `core`
                       )->a( n = `xmlns` v = `sap.m`
                       )->a( n = `xmlns:core` v = `sap.ui.core` ).
 
-    DATA(dialog) = popup->ele( `Dialog`
+
+    dialog = popup->ele( `Dialog`
                        )->a( n = `title` v = `Load Variant`
                        )->a( n = `contentHeight` v = `50%`
                        )->a( n = `contentWidth` v = `50%`
@@ -202,10 +225,10 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
   METHOD z2ui5_if_app~main.
     me->client = client.
 
-    IF client->check_on_init( ).
+    IF client->check_on_init( ) IS NOT INITIAL.
       init( ).
       RETURN.
-    ELSEIF client->check_on_navigated( ).
+    ELSEIF client->check_on_navigated( ) IS NOT INITIAL.
       " a restored draft (browser Forward, a reload): the popup went with
       " the page - show it again
       popup_variant_read( ).
@@ -229,7 +252,8 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
   METHOD on_event_confirm.
 
-    DATA(ls_variant) = get_selected( ).
+    DATA ls_variant TYPE z2ui5_cl_sel_var_db=>ty_s_db.
+    ls_variant = get_selected( ).
     IF ls_variant IS INITIAL.
       client->message_toast_display( `Select a variant first` ).
       RETURN.
@@ -245,7 +269,8 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
   METHOD on_event_delete.
 
-    DATA(ls_variant) = get_selected( ).
+    DATA ls_variant TYPE z2ui5_cl_sel_var_db=>ty_s_db.
+    ls_variant = get_selected( ).
     IF ls_variant IS INITIAL.
       client->message_toast_display( `Select a variant first` ).
       RETURN.
@@ -269,11 +294,17 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
 
   METHOD get_selected.
 
-    DATA(lv_index) = line_index( mt_variant[ selkz = abap_true ] ).
+    DATA lv_index TYPE i.
+    DATA temp2 LIKE sy-subrc.
+    FIELD-SYMBOLS <ls_db> TYPE z2ui5_t_13.
+    READ TABLE mt_variant WITH KEY selkz = abap_true TRANSPORTING NO FIELDS.
+    temp2 = sy-tabix.
+    lv_index = temp2.
     IF lv_index <= 0.
       RETURN.
     ENDIF.
-    ASSIGN mt_variant_db[ lv_index ] TO FIELD-SYMBOL(<ls_db>).
+
+    READ TABLE mt_variant_db INDEX lv_index ASSIGNING <ls_db>.
     IF <ls_db> IS ASSIGNED.
       result = <ls_db>.
     ENDIF.
@@ -294,15 +325,19 @@ CLASS z2ui5_cl_sel_var_pop_read IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read_default.
+        DATA temp4 TYPE z2ui5_t_13.
 
     TRY.
 
         " the default row of the user, else the shared one - db_read( ) fills
         " neither check_def nor t_filter of mt_variant, so reading the default
         " from there always came back empty
-        result-s_variant = z2ui5_cl_sel_var_db=>db_read_default( VALUE #( handle01 = var_handle1
-                                                                           handle02 = var_handle2
-                                                                           handle03 = var_handle3 ) ).
+
+        CLEAR temp4.
+        temp4-handle01 = var_handle1.
+        temp4-handle02 = var_handle2.
+        temp4-handle03 = var_handle3.
+        result-s_variant = z2ui5_cl_sel_var_db=>db_read_default( temp4 ).
         IF result-s_variant IS INITIAL.
           RETURN.
         ENDIF.
