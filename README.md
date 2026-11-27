@@ -96,6 +96,12 @@ METHOD z2ui5_if_app~main.
     RETURN.
   ENDIF.
 
+  " a restored draft or a return from another app: show the view again
+  IF client->check_on_navigated( ).
+    view_display( ).
+    RETURN.
+  ENDIF.
+
   IF client->check_on_event( `GO` ).
     DATA(lv_where) = z2ui5_cl_sel_context=>filter_get_sql_where( mo_multiselect->ms_result-t_filter ).
     SELECT FROM t100 FIELDS * WHERE (lv_where) INTO TABLE @mt_t100 UP TO 100 ROWS.
@@ -121,8 +127,9 @@ mo_variant = z2ui5_cl_sel_multisel_pop=>factory_by_data( data        = mt_table
 " on the Filter button
 client->nav_app_call( mo_variant ).
 
-" back in your app
-IF client->check_on_navigated( ).
+" back in your app - check_on_nav_back( ) is true only on the return from
+" the popup; on a restored draft (check_on_navigated( ) alone) show the view
+IF client->check_on_nav_back( ).
   DATA(lo_filter) = CAST z2ui5_cl_sel_multisel_pop( client->get_app_prev( ) ).
   IF lo_filter->result( )-check_confirmed = abap_true.
     z2ui5_cl_sel_context=>filter_itab( EXPORTING filter = lo_filter->result( )-t_filter

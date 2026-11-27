@@ -58,7 +58,9 @@ difference that is not named under `settled` or `own`. After a refresh, set
   `z2ui5_cl_ui5_view_builder`), never its frozen `src/99`
 
 There is no version pin on it — abaplint resolves it from its `main`
-branch. That is why `ci` also runs on a weekly schedule: a rename
+branch, named as `"branch": "main"` in `abaplint.jsonc` and
+`.github/abaplint/abap_cloud.jsonc` rather than left to the default
+(abap2UI5 CONVENTIONS §9). That is why `ci` also runs on a weekly schedule: a rename
 upstream breaks this repository silently, and with no pull request open nothing
 else would notice.
 
@@ -93,8 +95,12 @@ proves and how the abap2UI5-linter baseline works.
 CI comes from the shared CI template of abap2UI5-addons (reusable workflows in
 [rap-ext](https://github.com/abap2UI5-addons/rap-ext/blob/main/.github/ci/README.md),
 pinned by commit, moved by `bump-deps`): `ci` (abaplint Standard and Cloud,
-unit, rename, the abap2UI5-linter - one job each), `ci-702` (writes and lints
-the downported branch `702`), `build-rename`, `deploy-pages`, `bump-deps`.
+unit, rename, the abap2UI5-linter and `npm run check:702` - one job each),
+`ci-702` (writes and lints the downported branch `702`), `build-rename`,
+`deploy-pages`, `bump-deps`. `npm run check:702` is the 7.02 gate of a pull
+request: `.github/scripts/check-702.sh` downports a scratch copy of `src/` in
+`build/702` and lints it with `.github/abaplint/abap_702.jsonc` (`src/` itself
+is never rewritten).
 
 ## Views
 
