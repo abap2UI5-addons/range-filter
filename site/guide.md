@@ -87,9 +87,13 @@ ENDMETHOD.
 
 ::: warning Check the field names
 The select-options are bound to the view, so the filter - field names
-included - comes back from the browser. Before the names go into a dynamic
-`WHERE`, keep only those that are fields of your table, as above: a forged
-name could otherwise carry a condition or a subquery on another table.
+included - comes back from the browser. Keep only the names that are fields
+of your table before they go into the dynamic `WHERE`, as above.
+`filter_get_sql_where` itself already drops every name that is not a plain
+identifier, so a forged name cannot add a condition or a subquery; but a name
+that is no column of your table makes the `SELECT` raise a
+`CX_SY_DYNAMIC_OSQL_*` exception - a short dump unless you catch it - and any
+other column of the table could be filtered on, not only the ones you offer.
 :::
 
 ## As a filter popup
