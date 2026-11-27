@@ -105,6 +105,8 @@ CLASS ltcl_test_roundtrip DEFINITION FINAL
         VALUE(result) TYPE abap_bool.
 
     METHODS popup_create
+      IMPORTING
+        it_range      TYPE z2ui5_cl_sel_context=>ty_t_range OPTIONAL
       RETURNING
         VALUE(ro_pop) TYPE REF TO z2ui5_cl_sel_range_pop.
 
@@ -114,6 +116,8 @@ CLASS ltcl_test_roundtrip DEFINITION FINAL
     METHODS test_add_row             FOR TESTING RAISING cx_static_check.
     METHODS test_delete_row          FOR TESTING RAISING cx_static_check.
     METHODS test_cancel              FOR TESTING RAISING cx_static_check.
+    METHODS test_roundtrip_keeps_sign FOR TESTING RAISING cx_static_check.
+    METHODS test_confirm_empty_value FOR TESTING RAISING cx_static_check.
 
 ENDCLASS.
 
@@ -122,7 +126,7 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
   METHOD popup_create.
 
-    ro_pop = z2ui5_cl_sel_range_pop=>factory( ).
+    ro_pop = z2ui5_cl_sel_range_pop=>factory( it_range ).
     mo_action = NEW #( NEW z2ui5_cl_ui5_handler( `` ) ).
     mo_action->mo_app->mo_app = ro_pop.
     mi_client = NEW z2ui5_cl_ui5_client( mo_action ).
@@ -212,6 +216,49 @@ CLASS ltcl_test_roundtrip IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_false( lo_pop->result( )-check_confirmed ).
     cl_abap_unit_assert=>assert_true( popup_destroyed( ) ).
+
+  ENDMETHOD.
+
+  METHOD test_roundtrip_keeps_sign.
+
+    " an excluding row comes back excluding - and with an option and a value
+    DATA(lt_range) = VALUE z2ui5_cl_sel_context=>ty_t_range(
+      ( sign = `I` option = `EQ` low = `A` )
+      ( sign = `E` option = `EQ` low = `B` )
+      ( sign = `E` option = `BT` low = `C` high = `D` ) ).
+
+    DATA(lo_pop) = popup_create( lt_range ).
+    cl_abap_unit_assert=>assert_equals( exp = `E`
+                                        act = lo_pop->mt_filter[ 2 ]-sign ).
+
+    mo_action->ms_actual-event = `BUTTON_CONFIRM`.
+    lo_pop->z2ui5_if_app~main( mi_client ).
+
+    " the empty row factory( ) appends is left out
+    cl_abap_unit_assert=>assert_equals( exp = lt_range
+                                        act = lo_pop->result( )-t_range ).
+
+  ENDMETHOD.
+
+  METHOD test_confirm_empty_value.
+
+    " <leer> and !<leer> are no options of a range - the empty value is
+    " EQ or NE an empty LOW, and kept although it has no value
+    DATA(lt_range) = VALUE z2ui5_cl_sel_context=>ty_t_range(
+      ( sign = `I` option = `EQ` )
+      ( sign = `E` option = `NE` ) ).
+
+    DATA(lo_pop) = popup_create( lt_range ).
+    cl_abap_unit_assert=>assert_equals( exp = `<leer>`
+                                        act = lo_pop->mt_filter[ 1 ]-option ).
+    cl_abap_unit_assert=>assert_equals( exp = `!<leer>`
+                                        act = lo_pop->mt_filter[ 2 ]-option ).
+
+    mo_action->ms_actual-event = `BUTTON_CONFIRM`.
+    lo_pop->z2ui5_if_app~main( mi_client ).
+
+    cl_abap_unit_assert=>assert_equals( exp = lt_range
+                                        act = lo_pop->result( )-t_range ).
 
   ENDMETHOD.
 

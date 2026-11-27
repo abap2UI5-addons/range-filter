@@ -5,6 +5,8 @@ CLASS z2ui5_cl_sel_range_pop DEFINITION PUBLIC.
 
     TYPES:
       BEGIN OF ty_s_filter_pop,
+        " I include, E exclude - as the sign of a range row
+        sign   TYPE string,
         option TYPE string,
         low    TYPE string,
         high   TYPE string,
@@ -40,6 +42,25 @@ CLASS z2ui5_cl_sel_range_pop DEFINITION PUBLIC.
     METHODS view_display.
 
   PRIVATE SECTION.
+    " entries of filter_get_token_range_mapping( ) that are no option of a
+    " range: the empty value, EQ or NE an empty LOW
+    CONSTANTS cv_option_empty     TYPE string VALUE `<leer>`.
+    CONSTANTS cv_option_not_empty TYPE string VALUE `!<leer>`.
+
+    METHODS filter_of_range
+      IMPORTING
+        range         TYPE z2ui5_cl_sel_context=>ty_s_range
+      RETURNING
+        VALUE(result) TYPE ty_s_filter_pop.
+
+    "! the range row of a condition of the popup - initial for a condition
+    "! without a value
+    METHODS range_of_filter
+      IMPORTING
+        filter        TYPE ty_s_filter_pop
+      RETURNING
+        VALUE(result) TYPE z2ui5_cl_sel_context=>ty_s_range.
+
 ENDCLASS.
 
 
@@ -85,9 +106,19 @@ CLASS z2ui5_cl_sel_range_pop IMPLEMENTATION.
                      )->a( n = `items` v = client->_bind( mt_filter )
                      )->ele( `CustomListItem` ).
 
-    DATA(grid) = item->ele( n = `Grid` ns = `layout` ).
+    DATA(grid) = item->ele( n = `Grid` ns = `layout`
+                     )->a( n = `defaultSpan` v = `L2 M4 S12` ).
 
-    grid->ele( `ComboBox`
+    grid->ele( `Select`
+        )->a( n = `selectedKey` v = `{SIGN}`
+        )->tag( n = `Item` ns = `core`
+        )->a( n = `key` v = `I`
+        )->a( n = `text` v = `Include`
+        )->tag( n = `Item` ns = `core`
+        )->a( n = `key` v = `E`
+        )->a( n = `text` v = `Exclude`
+        )->end(
+        )->ele( `ComboBox`
         )->a( n = `selectedKey` v = `{OPTION}`
         )->a( n = `items` v = client->_bind( mt_mapping )
         )->tag( n = `Item` ns = `core`
@@ -99,7 +130,7 @@ CLASS z2ui5_cl_sel_range_pop IMPLEMENTATION.
         )->a( n = `submit` v = client->_event( `BUTTON_CONFIRM` )
         )->tag( `Input`
         )->a( n = `value` v = `{HIGH}`
-        )->a( n = `visible` v = `{= ${OPTION} === 'BT' }`
+        )->a( n = `visible` v = `{= ${OPTION} === 'BT' || ${OPTION} === 'NB' }`
         )->a( n = `submit` v = client->_event( `BUTTON_CONFIRM` )
         )->tag( `Button`
         )->a( n = `icon` v = `sap-icon://decline`
@@ -139,11 +170,7 @@ CLASS z2ui5_cl_sel_range_pop IMPLEMENTATION.
 
       CLEAR mt_filter.
       LOOP AT ms_result-t_range REFERENCE INTO DATA(lr_range).
-        INSERT VALUE #( low    = lr_range->low
-                        high   = lr_range->high
-                        option = lr_range->option
-                        key    = z2ui5_cl_sel_context=>uuid_get_c32( )
-          ) INTO TABLE mt_filter.
+        INSERT filter_of_range( lr_range->* ) INTO TABLE mt_filter.
       ENDLOOP.
 
       view_display( ).
@@ -156,14 +183,10 @@ CLASS z2ui5_cl_sel_range_pop IMPLEMENTATION.
 
         CLEAR ms_result-t_range.
         LOOP AT mt_filter REFERENCE INTO DATA(lr_filter).
-          IF lr_filter->low IS INITIAL AND lr_filter->high IS INITIAL.
-            CONTINUE.
+          DATA(ls_range) = range_of_filter( lr_filter->* ).
+          IF ls_range IS NOT INITIAL.
+            INSERT ls_range INTO TABLE ms_result-t_range.
           ENDIF.
-          INSERT VALUE #( sign   = `I`
-                          option = lr_filter->option
-                          low    = lr_filter->low
-                          high   = lr_filter->high
-            ) INTO TABLE ms_result-t_range.
         ENDLOOP.
 
         ms_result-check_confirmed = abap_true.
@@ -184,6 +207,56 @@ CLASS z2ui5_cl_sel_range_pop IMPLEMENTATION.
         CLEAR mt_filter.
 
     ENDCASE.
+
+  ENDMETHOD.
+
+  METHOD filter_of_range.
+
+    result = VALUE #( sign   = COND #( WHEN range-sign = `E` THEN `E` ELSE `I` )
+                      option = range-option
+                      low    = range-low
+                      high   = range-high
+                      key    = z2ui5_cl_sel_context=>uuid_get_c32( ) ).
+
+    IF range-low IS INITIAL AND range-high IS INITIAL.
+      CASE range-option.
+        WHEN `EQ`.
+          result-option = cv_option_empty.
+        WHEN `NE`.
+          result-option = cv_option_not_empty.
+      ENDCASE.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD range_of_filter.
+
+    CASE filter-option.
+
+      WHEN cv_option_empty.
+        result-option = `EQ`.
+
+      WHEN cv_option_not_empty.
+        result-option = `NE`.
+
+      WHEN OTHERS.
+        IF filter-low IS INITIAL AND filter-high IS INITIAL.
+          RETURN.
+        ENDIF.
+        " a condition without an option compares like the token it shows
+        result-option = COND #( WHEN filter-option IS INITIAL THEN `EQ` ELSE filter-option ).
+        result-low    = filter-low.
+        " HIGH only where the option has one - it stays in the row when the
+        " user switches from BT to another option
+        IF result-option = `BT` OR result-option = `NB`.
+          result-high = filter-high.
+        ENDIF.
+
+    ENDCASE.
+
+    " the sign as chosen - a confirmed popup turned every excluding row into
+    " an including one
+    result-sign = COND #( WHEN filter-sign = `E` THEN `E` ELSE `I` ).
 
   ENDMETHOD.
 
