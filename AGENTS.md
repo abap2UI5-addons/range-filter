@@ -95,8 +95,12 @@ proves and how the abap2UI5-linter baseline works.
 CI comes from the shared CI template of abap2UI5-addons (reusable workflows in
 [rap-ext](https://github.com/abap2UI5-addons/rap-ext/blob/main/.github/ci/README.md),
 pinned by commit, moved by `bump-deps`): `ci` (abaplint Standard and Cloud,
-unit, rename, the abap2UI5-linter - one job each), `ci-702` (writes and lints
-the downported branch `702`), `build-rename`, `deploy-pages`, `bump-deps`.
+unit, rename, the abap2UI5-linter and `npm run check:702` - one job each),
+`ci-702` (writes and lints the downported branch `702`), `build-rename`,
+`deploy-pages`, `bump-deps`. `npm run check:702` is the 7.02 gate of a pull
+request: `.github/scripts/check-702.sh` downports a scratch copy of `src/` in
+`build/702` and lints it with `.github/abaplint/abap_702.jsonc` (`src/` itself
+is never rewritten).
 
 ## Views
 
