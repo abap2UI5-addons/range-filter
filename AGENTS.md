@@ -58,7 +58,9 @@ difference that is not named under `settled` or `own`. After a refresh, set
   `z2ui5_cl_ui5_view_builder`), never its frozen `src/99`
 
 There is no version pin on it — abaplint resolves it from its `main`
-branch. That is why `ci` also runs on a weekly schedule: a rename
+branch, named as `"branch": "main"` in `abaplint.jsonc` and
+`.github/abaplint/abap_cloud.jsonc` rather than left to the default
+(abap2UI5 CONVENTIONS §9). That is why `ci` also runs on a weekly schedule: a rename
 upstream breaks this repository silently, and with no pull request open nothing
 else would notice.
 
