@@ -328,8 +328,15 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
     DATA(ls_default) = z2ui5_cl_sel_var_db=>db_read_default( ms_variant ).
 
     IF ls_default-data IS NOT INITIAL.
-      z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = ls_default-data
-                                IMPORTING any = ms_result ).
+      " a default saved for an older shape of the selection no longer
+      " parses (xml_parse raises) - the selection the caller handed in stays
+      DATA(ls_result) = ms_result.
+      TRY.
+          z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = ls_default-data
+                                           IMPORTING any = ls_result ).
+          ms_result = ls_result.
+        CATCH cx_root ##NO_HANDLER.
+      ENDTRY.
     ENDIF.
 
   ENDMETHOD.
