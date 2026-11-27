@@ -144,22 +144,21 @@ CLASS z2ui5_cl_sel_sample_02 IMPLEMENTATION.
                                                                var_handle1 = `TEST_POP` ).
       set_data( ).
       view_display( ).
-      RETURN.
-    ENDIF.
 
-    IF client->check_on_navigated( ).
-      TRY.
-          DATA(lo_value_help) = CAST z2ui5_cl_sel_multisel_pop( client->get_app_prev( ) ).
-          IF lo_value_help->result( )-check_confirmed = abap_true.
-            mo_variant->mo_multiselect->ms_result-t_filter = lo_value_help->result( )-t_filter.
-            set_data( ).
-          ENDIF.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
-      RETURN.
-    ENDIF.
+    ELSEIF client->check_on_nav_back( ).
+      " back from the select-options popup, the one app this sample calls
+      DATA(lo_value_help) = CAST z2ui5_cl_sel_multisel_pop( client->get_app_prev( ) ).
+      IF lo_value_help->result( )-check_confirmed = abap_true.
+        mo_variant->mo_multiselect->ms_result-t_filter = lo_value_help->result( )-t_filter.
+        set_data( ).
+      ENDIF.
+      view_display( ).
 
-    IF client->get( )-event IS NOT INITIAL.
+    ELSEIF client->check_on_navigated( ).
+      " a restored draft or a return from another app - the view is shown again
+      view_display( ).
+
+    ELSEIF client->get( )-event IS NOT INITIAL.
       on_event( ).
     ENDIF.
 

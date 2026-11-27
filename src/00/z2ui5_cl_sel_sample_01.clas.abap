@@ -145,6 +145,13 @@ CLASS z2ui5_cl_sel_sample_01 IMPLEMENTATION.
       RETURN.
     ENDIF.
 
+    " navigated, but not back from a popup of the select-options (a restored
+    " draft, a return from another app): the view is shown again
+    IF client->check_on_navigated( ).
+      view_display( ).
+      RETURN.
+    ENDIF.
+
     IF client->get( )-event IS NOT INITIAL.
       on_event( ).
     ENDIF.
