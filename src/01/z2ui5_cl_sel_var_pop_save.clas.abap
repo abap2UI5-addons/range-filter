@@ -185,6 +185,11 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
     IF client->check_on_init( ).
       init( ).
       RETURN.
+    ELSEIF client->check_on_navigated( ).
+      " a restored draft (browser Forward, a reload): the popup went with
+      " the page - show it again
+      popup_variant_save( ).
+      RETURN.
     ENDIF.
 
     CASE client->get( )-event.

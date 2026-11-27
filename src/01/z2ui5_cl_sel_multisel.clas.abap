@@ -70,6 +70,31 @@ CLASS z2ui5_cl_sel_multisel DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    CONSTANTS:
+      BEGIN OF cs_nav,
+        range    TYPE string VALUE `RANGE`,
+        var_read TYPE string VALUE `VAR_READ`,
+        var_save TYPE string VALUE `VAR_SAVE`,
+      END OF cs_nav.
+
+    "! the id of this instance in its nav tags - set on its first popup, kept
+    "! in the draft with the instance
+    DATA mv_nav_id TYPE string.
+
+    "! the tag of a popup this instance calls: its own id and what for - so
+    "! a return is claimed only by the instance that called the popup, and
+    "! not by another selection of the host or the host's own popup call
+    METHODS nav_tag
+      IMPORTING
+        kind          TYPE string
+      RETURNING
+        VALUE(result) TYPE string.
+
+    "! the popup this instance called has returned: its result taken over
+    METHODS on_nav_back
+      IMPORTING
+        client TYPE REF TO z2ui5_if_client
+        kind   TYPE string.
 
 ENDCLASS.
 
@@ -178,42 +203,19 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
 
     result = abap_true.
 
-    IF client->check_on_navigated( ).
-      TRY.
-          DATA(lo_popup) = CAST z2ui5_cl_sel_range_pop( client->get_app_prev( ) ).
-          IF lo_popup->result( )-check_confirmed = abap_true.
-            FIELD-SYMBOLS <tab> TYPE z2ui5_cl_sel_context=>ty_s_filter_multi.
-            ASSIGN ms_result-t_filter[ name = mv_popup_name ] TO <tab>.
-            " an unassigned field symbol is a dump, which the CATCH below
-            " does not reach
-            IF <tab> IS ASSIGNED.
-              <tab>-t_range = lo_popup->result( )-t_range.
-              <tab>-t_token = z2ui5_cl_sel_context=>filter_get_token_t_by_range_t( <tab>-t_range ).
-            ENDIF.
-          ENDIF.
-          " handled on cancel too: the caller has to display its popup again,
-          " and the range popup's BUTTON_CANCEL must not reach the caller's events
-          RETURN.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
-
-      TRY.
-          DATA(ls_value) = CAST z2ui5_cl_sel_var_pop_read( client->get_app_prev( ) )->result( ).
-          IF ls_value-check_confirmed = abap_true.
-
-            z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = ls_value-s_variant-data
-                                      IMPORTING any = ms_result ).
-
-          ENDIF.
-          RETURN.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
-
-      TRY.
-          CAST z2ui5_cl_sel_var_pop_save( client->get_app_prev( ) )->result( ).
-          RETURN.
-        CATCH cx_root ##NO_HANDLER.
-      ENDTRY.
+    " only the return of a popup THIS instance called (its nav tag): a host
+    " with two selections, or one that opens a range or variant popup
+    " itself, keeps its own returns. Handled on cancel too: the caller has
+    " to display its view again, and the popup's events must not reach it
+    IF client->check_on_nav_back( ) = abap_true AND mv_nav_id IS NOT INITIAL.
+      DATA(lv_tag) = client->get_nav_tag( ).
+      DATA(lv_prefix) = |{ mv_nav_id }_|.
+      IF strlen( lv_tag ) > strlen( lv_prefix ) AND lv_tag CP |{ lv_prefix }*|.
+        on_nav_back( client = client
+                     kind   = substring( val = lv_tag
+                                         off = strlen( lv_prefix ) ) ).
+        RETURN.
+      ENDIF.
     ENDIF.
 
     CASE client->get( )-event.
@@ -227,7 +229,8 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
           RETURN.
         ENDIF.
         mv_popup_name = ls_sql-name.
-        client->nav_app_call( z2ui5_cl_sel_range_pop=>factory( ls_sql-t_range ) ).
+        client->nav_app_call( app = z2ui5_cl_sel_range_pop=>factory( ls_sql-t_range )
+                              tag = nav_tag( cs_nav-range ) ).
 
       WHEN `LIST_DELETE`.
         mv_popup_name = client->get_event_arg( 1 ).
@@ -245,7 +248,8 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
                                                               var_handle1    = ms_variant-handle01
                                                               var_handle2    = ms_variant-handle02
                                                               var_handle3    = ms_variant-handle03 ).
-        client->nav_app_call( lo_popup3 ).
+        client->nav_app_call( app = lo_popup3
+                              tag = nav_tag( cs_nav-var_read ) ).
 
       WHEN `BUTTON_SAVE`.
         DATA(lo_popup4) = z2ui5_cl_sel_var_pop_save=>factory( val            = ms_result
@@ -253,7 +257,8 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
                                                               var_handle1    = ms_variant-handle01
                                                               var_handle2    = ms_variant-handle02
                                                               var_handle3    = ms_variant-handle03 ).
-        client->nav_app_call( lo_popup4 ).
+        client->nav_app_call( app = lo_popup4
+                              tag = nav_tag( cs_nav-var_save ) ).
 
       WHEN `DELETE_ALL`.
         LOOP AT ms_result-t_filter REFERENCE INTO DATA(lr_sql).
@@ -273,6 +278,48 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
     r_result = factory_by_data( val       = z2ui5_cl_sel_context=>rtti_create_tab_by_name( val )
                                 s_variant = s_variant ).
     r_result->ms_result-tab_name = val.
+
+  ENDMETHOD.
+
+  METHOD nav_tag.
+
+    IF mv_nav_id IS INITIAL.
+      mv_nav_id = z2ui5_cl_sel_context=>uuid_get_c32( ).
+    ENDIF.
+    result = |{ mv_nav_id }_{ kind }|.
+
+  ENDMETHOD.
+
+  METHOD on_nav_back.
+
+    FIELD-SYMBOLS <tab> TYPE z2ui5_cl_sel_context=>ty_s_filter_multi.
+
+    " the popup once - get_app_prev( ) loads and parses its draft
+    DATA(li_prev) = client->get_app_prev( ).
+
+    IF kind = cs_nav-range AND li_prev IS INSTANCE OF z2ui5_cl_sel_range_pop.
+      DATA(ls_range) = CAST z2ui5_cl_sel_range_pop( li_prev )->result( ).
+      IF ls_range-check_confirmed = abap_true.
+        ASSIGN ms_result-t_filter[ name = mv_popup_name ] TO <tab>.
+        IF <tab> IS ASSIGNED.
+          <tab>-t_range = ls_range-t_range.
+          <tab>-t_token = z2ui5_cl_sel_context=>filter_get_token_t_by_range_t( <tab>-t_range ).
+        ENDIF.
+      ENDIF.
+
+    ELSEIF kind = cs_nav-var_read AND li_prev IS INSTANCE OF z2ui5_cl_sel_var_pop_read.
+      DATA(ls_value) = CAST z2ui5_cl_sel_var_pop_read( li_prev )->result( ).
+      IF ls_value-check_confirmed = abap_true.
+        TRY.
+            z2ui5_cl_sel_context=>xml_parse( EXPORTING xml = ls_value-s_variant-data
+                                             IMPORTING any = ms_result ).
+          CATCH cx_root ##NO_HANDLER.
+            " a variant that no longer fits the selection - the selection stays
+        ENDTRY.
+      ENDIF.
+
+    ENDIF.
+    " the save popup has stored its variant itself - nothing to take over
 
   ENDMETHOD.
 
