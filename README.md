@@ -103,18 +103,37 @@ METHOD z2ui5_if_app~main.
   ENDIF.
 
   IF client->check_on_event( `GO` ).
-    DATA(lv_where) = z2ui5_cl_sel_context=>filter_get_sql_where( mo_multiselect->ms_result-t_filter ).
-    SELECT FROM t100 FIELDS * WHERE (lv_where) INTO TABLE @mt_t100 UP TO 100 ROWS.
+    read_data( ).
   ENDIF.
+
+ENDMETHOD.
+
+METHOD read_data.
+
+  " only a field of the table goes into the WHERE clause
+  DATA lt_filter LIKE mo_multiselect->ms_result-t_filter.
+  DATA(lt_comp) = z2ui5_cl_sel_context=>rtti_get_t_attri_by_table_name( `T100` ).
+  LOOP AT mo_multiselect->ms_result-t_filter INTO DATA(ls_filter).
+    IF line_exists( lt_comp[ name = ls_filter-name ] ).
+      INSERT ls_filter INTO TABLE lt_filter.
+    ENDIF.
+  ENDLOOP.
+
+  DATA(lv_where) = z2ui5_cl_sel_context=>filter_get_sql_where( lt_filter ).
+  SELECT FROM t100 FIELDS * WHERE (lv_where) INTO TABLE @mt_t100 UP TO 100 ROWS.
 
 ENDMETHOD.
 ```
 
 The select-options are bound to the view, so `ms_result-t_filter` - field
-names included - comes back from the browser. Before the names go into a
-dynamic `WHERE`, keep only those that are fields of your table, as
-`z2ui5_cl_sel_sample_01` does: a forged name could otherwise carry a condition
-or a subquery on another table.
+names included - comes back from the browser. Keep only the names that are
+fields of your table before they go into the dynamic `WHERE`, as above and as
+`z2ui5_cl_sel_sample_01` does. `filter_get_sql_where` itself already drops
+every name that is not a plain identifier, so a forged name cannot add a
+condition or a subquery; but a name that is no column of your table makes the
+`SELECT` raise a `CX_SY_DYNAMIC_OSQL_*` exception - a short dump unless you
+catch it - and any other column of the table could be filtered on, not only
+the ones you offer.
 
 As a filter popup over an internal table (condensed from
 `z2ui5_cl_sel_sample_02`):

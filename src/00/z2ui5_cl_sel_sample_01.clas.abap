@@ -42,8 +42,9 @@ CLASS z2ui5_cl_sel_sample_01 IMPLEMENTATION.
     FIELD-SYMBOLS <tab> TYPE ANY TABLE.
 
     " the select-options are bound to the view, so their names come back from
-    " the browser - only a field of the table goes into the WHERE clause,
-    " never a condition or a subquery on another table
+    " the browser - only a field of the table goes into the WHERE clause:
+    " filter_get_sql_where drops what is no identifier, but an unknown column
+    " would end the dynamic SELECT in a CX_SY_DYNAMIC_OSQL_* exception
     DATA lt_filter LIKE mo_multiselect->ms_result-t_filter.
     DATA(lt_comp) = z2ui5_cl_sel_context=>rtti_get_t_attri_by_table_name( mv_tabname ).
     LOOP AT mo_multiselect->ms_result-t_filter INTO DATA(ls_filter).
