@@ -42,6 +42,13 @@ abapGit has no dependency management, so utilities are vendored, not referenced.
    from the style rules the master does not follow (`ambiguous_statement`,
    `max_one_statement`); do not reformat them.
 
+`.github/abap-util.json` names the copies and their masters for abap-util's
+`sync-check`: with abap-util checked out next to this repository,
+`node ../abap-util/.github/scripts/sync-check.mjs --consumer . --report`
+lists every method whose body or declaration differs from the master and
+every method only this copy has. No commit is pinned yet - the copies were
+taken before the manifest existed.
+
 ## Dependencies
 
 - [abap2UI5](https://github.com/abap2UI5/abap2UI5) — the framework, its
