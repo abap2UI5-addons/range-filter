@@ -23,7 +23,8 @@ CLASS z2ui5_cl_sel_var_pop_save DEFINITION
         check_default TYPE abap_bool,
         t_filter      TYPE z2ui5_cl_sel_context=>ty_t_filter_multi,
       END OF ty_s_variant_out.
-    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH EMPTY KEY.
+    " kept for callers - the popup itself keeps no list of variants
+    TYPES ty_t_variant_out TYPE STANDARD TABLE OF ty_s_variant_out WITH EMPTY KEY ##NEEDED.
 
     DATA ms_variant_save TYPE ty_s_variant_out.
 
@@ -50,7 +51,6 @@ CLASS z2ui5_cl_sel_var_pop_save DEFINITION
   PROTECTED SECTION.
     DATA client     TYPE REF TO z2ui5_if_client.
     DATA ms_variant TYPE ty_s_variant.
-    DATA mt_variant TYPE ty_t_variant_out.
     DATA s_variant  TYPE z2ui5_cl_sel_multisel=>ty_s_result.
     DATA ms_result  TYPE ty_s_result.
 
@@ -58,7 +58,28 @@ CLASS z2ui5_cl_sel_var_pop_save DEFINITION
     METHODS init.
     METHODS save_variant.
 
+    "! user and name of the variant the user was told exists already - Save
+    "! again replaces it. Protected, not private: the draft of the app
+    "! reaches no private attribute
+    DATA mv_name_confirmed TYPE string.
+
   PRIVATE SECTION.
+    " the lengths of NAME and DESCR of z2ui5_t_13 - a longer input was cut
+    " off silently, and two names alike in their first ten characters
+    " replaced each other
+    CONSTANTS cv_name_length  TYPE i VALUE 10.
+    CONSTANTS cv_descr_length TYPE i VALUE 50.
+
+    "! the variant as it goes into the table
+    METHODS get_db_info
+      RETURNING
+        VALUE(result) TYPE z2ui5_t_13.
+
+    "! abap_false with a message when the input cannot be saved as it is
+    METHODS check_save
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
 ENDCLASS.
 
 
@@ -116,10 +137,12 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
         )->a( n = `text` v = `Variant`
         )->tag( `Input`
         )->a( n = `value` v = client->_bind( ms_variant_save-name )
+        )->a( n = `maxLength` v = |{ cv_name_length }|
         )->tag( `Label`
         )->a( n = `text` v = `Description`
         )->tag( `Input`
-        )->a( n = `value` v = client->_bind( ms_variant_save-description ) ).
+        )->a( n = `value` v = client->_bind( ms_variant_save-description )
+        )->a( n = `maxLength` v = |{ cv_descr_length }| ).
 
     form->ele( `Toolbar`
         )->tag( `Title`
@@ -171,6 +194,9 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
         client->nav_app_leave( ).
 
       WHEN `DB_SAVE`.
+        IF check_save( ) = abap_false.
+          RETURN.
+        ENDIF.
         save_variant( ).
         ms_result-check_confirmed = abap_true.
         client->popup_destroy( ).
@@ -181,21 +207,57 @@ CLASS z2ui5_cl_sel_var_pop_save IMPLEMENTATION.
 
   METHOD save_variant.
 
-    ms_variant_save-t_filter = ms_result-t_filter.
-    INSERT ms_variant_save INTO TABLE mt_variant.
+    " the result is the selection saved
+    ms_result-t_filter       = s_variant-t_filter.
+    ms_variant_save-t_filter = s_variant-t_filter.
+
+    z2ui5_cl_sel_var_db=>db_save( s_info = get_db_info( )
+                                  data   = s_variant ).
+
+  ENDMETHOD.
+
+  METHOD get_db_info.
 
     " "User specific" decides who sees the variant: saved with the user
     " name only the user, saved without one everybody
-    z2ui5_cl_sel_var_db=>db_save( s_info = VALUE #( uname     = COND #( WHEN ms_variant_save-check_user = abap_true
-                                                                        THEN sy-uname )
-                                                    name      = ms_variant_save-name
-                                                    descr     = ms_variant_save-description
-                                                    check_def = ms_variant_save-check_default
-                                                    check_usr = ms_variant_save-check_user
-                                                    handle01  = ms_variant-handle1
-                                                    handle02  = ms_variant-handle2
-                                                    handle03  = ms_variant-handle3 )
-                                  data   = s_variant ).
+    result = VALUE #( uname     = COND #( WHEN ms_variant_save-check_user = abap_true
+                                          THEN sy-uname )
+                      name      = ms_variant_save-name
+                      descr     = ms_variant_save-description
+                      check_def = ms_variant_save-check_default
+                      check_usr = ms_variant_save-check_user
+                      handle01  = ms_variant-handle1
+                      handle02  = ms_variant-handle2
+                      handle03  = ms_variant-handle3 ).
+
+  ENDMETHOD.
+
+  METHOD check_save.
+
+    IF ms_variant_save-name IS INITIAL.
+      client->message_toast_display( `Enter a name for the variant` ).
+      RETURN.
+    ENDIF.
+
+    " the input is limited in the browser, the event is not
+    IF    strlen( ms_variant_save-name ) > cv_name_length
+       OR strlen( ms_variant_save-description ) > cv_descr_length.
+      client->message_toast_display( |The name has at most { cv_name_length }, the description { cv_descr_length } characters| ).
+      RETURN.
+    ENDIF.
+
+    " saving under a name that exists replaces that variant - a shared one
+    " every user sees - so only when Save is pressed again for that name
+    DATA(ls_info) = get_db_info( ).
+    DATA(lv_key)  = |{ ls_info-uname }/{ ls_info-name }|.
+    IF     lv_key <> mv_name_confirmed
+       AND z2ui5_cl_sel_var_db=>db_check_exists( ls_info ) = abap_true.
+      mv_name_confirmed = lv_key.
+      client->message_toast_display( |A variant { ms_variant_save-name } exists already - press Save again to replace it| ).
+      RETURN.
+    ENDIF.
+
+    result = abap_true.
 
   ENDMETHOD.
 

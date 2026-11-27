@@ -184,8 +184,12 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
           IF lo_popup->result( )-check_confirmed = abap_true.
             FIELD-SYMBOLS <tab> TYPE z2ui5_cl_sel_context=>ty_s_filter_multi.
             ASSIGN ms_result-t_filter[ name = mv_popup_name ] TO <tab>.
-            <tab>-t_range = lo_popup->result( )-t_range.
-            <tab>-t_token = z2ui5_cl_sel_context=>filter_get_token_t_by_range_t( <tab>-t_range ).
+            " an unassigned field symbol is a dump, which the CATCH below
+            " does not reach
+            IF <tab> IS ASSIGNED.
+              <tab>-t_range = lo_popup->result( )-t_range.
+              <tab>-t_token = z2ui5_cl_sel_context=>filter_get_token_t_by_range_t( <tab>-t_range ).
+            ENDIF.
           ENDIF.
           " handled on cancel too: the caller has to display its popup again,
           " and the range popup's BUTTON_CANCEL must not reach the caller's events
@@ -215,8 +219,14 @@ CLASS z2ui5_cl_sel_multisel IMPLEMENTATION.
     CASE client->get( )-event.
 
       WHEN `LIST_OPEN`.
-        mv_popup_name = client->get_event_arg( 1 ).
-        DATA(ls_sql) = ms_result-t_filter[ name = client->get_event_arg( 1 ) ].
+        " the name comes from the client - an unknown one is ignored instead
+        " of raising CX_SY_ITAB_LINE_NOT_FOUND
+        DATA ls_sql LIKE LINE OF ms_result-t_filter.
+        READ TABLE ms_result-t_filter INTO ls_sql WITH KEY name = client->get_event_arg( 1 ).
+        IF sy-subrc <> 0.
+          RETURN.
+        ENDIF.
+        mv_popup_name = ls_sql-name.
         client->nav_app_call( z2ui5_cl_sel_range_pop=>factory( ls_sql-t_range ) ).
 
       WHEN `LIST_DELETE`.

@@ -23,8 +23,32 @@ CLASS z2ui5_cl_sel_var_db DEFINITION
         s_info TYPE z2ui5_t_13
         data   TYPE data.
 
+    "! abap_true when a variant of the name in s_info exists in its scope -
+    "! the same user (or shared) and handles - which db_save( ) replaces
+    CLASS-METHODS db_check_exists
+      IMPORTING
+        s_info        TYPE z2ui5_t_13
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
+    "! deletes a variant of the current user. A variant saved for every user
+    "! (no user) is left: the table does not say who saved it, so nobody
+    "! could be told from everybody else
+    CLASS-METHODS db_delete
+      IMPORTING
+        uuid          TYPE z2ui5_t_13-uuid
+      RETURNING
+        VALUE(result) TYPE abap_bool.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
+    "! the variant of the name in s_info in its scope, initial when none
+    CLASS-METHODS get_uuid
+      IMPORTING
+        s_info        TYPE z2ui5_t_13
+      RETURNING
+        VALUE(result) TYPE z2ui5_t_13-uuid.
+
 ENDCLASS.
 
 
@@ -57,14 +81,8 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
     DATA(ls_db) = s_info.
 
     " saving under a name that exists replaces that variant
-    SELECT SINGLE uuid FROM z2ui5_t_13
-      WHERE uname    = @s_info-uname
-        AND handle01 = @s_info-handle01
-        AND handle02 = @s_info-handle02
-        AND handle03 = @s_info-handle03
-        AND name     = @s_info-name
-      INTO @ls_db-uuid. "#EC CI_NOORDER
-    IF sy-subrc <> 0.
+    ls_db-uuid = get_uuid( s_info ).
+    IF ls_db-uuid IS INITIAL.
       ls_db-uuid = z2ui5_cl_sel_context=>uuid_get_c32( ).
     ENDIF.
 
@@ -83,6 +101,39 @@ CLASS z2ui5_cl_sel_var_db IMPLEMENTATION.
 
     MODIFY z2ui5_t_13 FROM @ls_db.
     COMMIT WORK AND WAIT.
+
+  ENDMETHOD.
+
+  METHOD db_check_exists.
+
+    result = xsdbool( get_uuid( s_info ) IS NOT INITIAL ).
+
+  ENDMETHOD.
+
+  METHOD get_uuid.
+
+    SELECT SINGLE uuid FROM z2ui5_t_13
+      WHERE uname    = @s_info-uname
+        AND handle01 = @s_info-handle01
+        AND handle02 = @s_info-handle02
+        AND handle03 = @s_info-handle03
+        AND name     = @s_info-name
+      INTO @result. "#EC CI_NOORDER
+
+  ENDMETHOD.
+
+  METHOD db_delete.
+
+    IF uuid IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DELETE FROM z2ui5_t_13 WHERE uuid  = @uuid
+                             AND uname = @sy-uname.
+    result = xsdbool( sy-subrc = 0 ).
+    IF result = abap_true.
+      COMMIT WORK AND WAIT.
+    ENDIF.
 
   ENDMETHOD.
 

@@ -186,6 +186,12 @@ CLASS z2ui5_cl_sel_context DEFINITION
       CHANGING
         !tab TYPE STANDARD TABLE.
 
+    CLASS-METHODS itab_filter_by_t_range
+      IMPORTING
+        val  TYPE ty_t_filter_multi
+      CHANGING
+        !tab TYPE STANDARD TABLE.
+
     CLASS-METHODS uuid_get_c32
       RETURNING
         VALUE(result) TYPE string.
@@ -236,6 +242,29 @@ CLASS z2ui5_cl_sel_context DEFINITION
       RETURNING
         VALUE(result) TYPE abap_bool.
 
+    " the system fields sy_get hands out, in the types SYST gives them
+    TYPES:
+      BEGIN OF ty_s_sy,
+        datum TYPE d,
+        uzeit TYPE t,
+        uname TYPE c LENGTH 12,
+        sysid TYPE c LENGTH 8,
+        saprl TYPE c LENGTH 4,
+      END OF ty_s_sy.
+
+    " THE one place that reads a system field for its VALUE - date, time,
+    " user, system id, release. Every other class asks here
+    " (sy_get( )-uname), for two reasons: ABAP for Cloud Development reports
+    " the old system fields on every statement that names one ("The old
+    " variant of SY-DATUM should not be used ..."), so one reader is one
+    " finding per field instead of one per use; and the day one of them
+    " has to come from another API, it changes here and nowhere else.
+    " Not meant: sy-subrc, sy-tabix and sy-index - those are the result of
+    " the statement before them and have to be read where it stands
+    CLASS-METHODS sy_get
+      RETURNING
+        VALUE(result) TYPE ty_s_sy.
+
     CLASS-METHODS rtti_get_t_attri_by_oref
       IMPORTING
         val           TYPE any
@@ -252,6 +281,15 @@ CLASS z2ui5_cl_sel_context DEFINITION
         VALUE(result) TYPE string.
 
   PRIVATE SECTION.
+
+    " whether a type kind is a number: i, int1, int2, int8, p, f,
+    " decfloat16, decfloat34 - the one list the number checks share. int8
+    " by its value `8`, a constant lower releases do not have
+    CLASS-METHODS rtti_check_typekind_number
+      IMPORTING
+        val           TYPE clike
+      RETURNING
+        VALUE(result) TYPE abap_bool.
 
     TYPES:
       BEGIN OF ty_s_attri_cache,
@@ -280,6 +318,14 @@ CLASS z2ui5_cl_sel_context DEFINITION
         template      TYPE string
         low           TYPE string
         high          TYPE string
+      RETURNING
+        VALUE(result) TYPE string.
+
+    " The option that selects the complement: EQ <-> NE, LT <-> GE, LE <-> GT,
+    " CP <-> NP, BT <-> NB. Any other option comes back as it is.
+    CLASS-METHODS filter_option_negate
+      IMPORTING
+        val           TYPE clike
       RETURNING
         VALUE(result) TYPE string.
 ENDCLASS.
@@ -334,24 +380,10 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   METHOD filter_itab.
 
-    DATA ref TYPE REF TO data.
-
-    LOOP AT val REFERENCE INTO ref.
-
-      LOOP AT filter INTO DATA(ls_filter).
-
-        ASSIGN ref->(ls_filter-name) TO FIELD-SYMBOL(<field>).
-        IF sy-subrc <> 0.
-          CONTINUE.
-        ENDIF.
-        IF <field> NOT IN ls_filter-t_range.
-          DELETE val.
-          EXIT.
-        ENDIF.
-
-      ENDLOOP.
-
-    ENDLOOP.
+    " the same filter as itab_filter_by_t_range - a field whose range is
+    " empty keeps every row there too
+    itab_filter_by_t_range( EXPORTING val = filter
+                            CHANGING  tab = val ).
 
   ENDMETHOD.
 
@@ -402,8 +434,9 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
       DATA(lv_index) = 0.
       LOOP AT <lt_source> ASSIGNING FIELD-SYMBOL(<ls_source>).
         lv_index = lv_index + 1.
+        UNASSIGN <ls_range>.
         ASSIGN lt_tab[ lv_index ] TO <ls_range>.
-        IF sy-subrc <> 0.
+        IF <ls_range> IS NOT ASSIGNED.
           EXIT.
         ENDIF.
         UNASSIGN <lv_part>.
@@ -531,14 +564,16 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " a data object is no type name
     lo_type = cl_abap_typedescr=>describe_by_data( val ).
     IF lo_type->kind = cl_abap_typedescr=>kind_ref.
-      " an initial reference would be REFERENCE_IS_INITIAL, a runtime error -
-      " see rtti_get_t_attri_by_oref
-      IF val IS INITIAL.
+      " REFERENCE_IS_INITIAL - see rtti_get_t_attri_by_oref
+      cl_abap_typedescr=>describe_by_data_ref( EXPORTING  p_data_ref           = val
+                                               RECEIVING p_descr_ref           = lo_type
+                                               EXCEPTIONS reference_is_initial = 1
+                                                          OTHERS               = 2 ).
+      IF sy-subrc <> 0.
         RAISE EXCEPTION TYPE z2ui5_cx_sel_error
           EXPORTING
             val = `RTTI_REFERENCE_IS_INITIAL`.
       ENDIF.
-      lo_type = cl_abap_typedescr=>describe_by_data_ref( val ).
     ENDIF.
 
     CASE lo_type->kind.
@@ -596,58 +631,42 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   METHOD rtti_get_t_attri_by_table_name.
 
+    DATA lo_obj    TYPE REF TO cl_abap_typedescr.
+    DATA lo_struct TYPE REF TO cl_abap_structdescr.
+
     IF table_name IS INITIAL.
       RAISE EXCEPTION TYPE z2ui5_cx_sel_error
         EXPORTING
           val = `TABLE_NAME_INITIAL_ERROR`.
     ENDIF.
 
+    cl_abap_typedescr=>describe_by_name( EXPORTING  p_name         = table_name
+                                         RECEIVING  p_descr_ref    = lo_obj
+                                         EXCEPTIONS type_not_found = 1
+                                                    OTHERS         = 2 ).
+    IF sy-subrc <> 0.
+      " an unknown name has no columns - the result stays empty, as it always
+      " did (the former TABLE_NOT_FOUND raise sat inside its own CATCH cx_root)
+      RETURN.
+    ENDIF.
+
+    " one describe: a structure (DDIC table, structure, view) or a table
+    " type, whose line type is the structure. Anything else has no columns
     TRY.
-        cl_abap_structdescr=>describe_by_name( EXPORTING  p_name         = table_name
-                                               RECEIVING  p_descr_ref    = DATA(lo_obj)
-                                               EXCEPTIONS type_not_found = 1
-                                                          OTHERS         = 2
-            ).
-
-        IF sy-subrc <> 0.
-          RAISE EXCEPTION TYPE z2ui5_cx_sel_error
-            EXPORTING
-              val = |TABLE_NOT_FOUND_NAME___{ table_name }|.
-        ENDIF.
-        DATA(lo_struct) = CAST cl_abap_structdescr( lo_obj ).
-
-      CATCH cx_root.
-
-        TRY.
-            cl_abap_structdescr=>describe_by_name( EXPORTING  p_name         = table_name
-                                                   RECEIVING  p_descr_ref    = lo_obj
-                                                   EXCEPTIONS type_not_found = 1
-                                                              OTHERS         = 2
-            ).
-            IF sy-subrc <> 0.
-              RAISE EXCEPTION TYPE z2ui5_cx_sel_error
-                EXPORTING
-                  val = |TABLE_NOT_FOUND_NAME___{ table_name }|.
-            ENDIF.
-
-            DATA(lo_tab) = CAST cl_abap_tabledescr( lo_obj ).
-            lo_struct = CAST cl_abap_structdescr( lo_tab->get_table_line_type( ) ).
-          CATCH cx_root.
+        CASE lo_obj->kind.
+          WHEN cl_abap_typedescr=>kind_struct.
+            lo_struct = CAST #( lo_obj ).
+          WHEN cl_abap_typedescr=>kind_table.
+            lo_struct = CAST #( CAST cl_abap_tabledescr( lo_obj )->get_table_line_type( ) ).
+          WHEN OTHERS.
             RETURN.
-        ENDTRY.
-
+        ENDCASE.
+      CATCH cx_sy_move_cast_error.
+        RETURN.
     ENDTRY.
 
-    DATA(lt_comps) = lo_struct->get_components( ).
-
-    LOOP AT lt_comps REFERENCE INTO DATA(lr_comp).
-      IF lr_comp->as_include = abap_true.
-        DATA(lt_attri) = rtti_get_t_attri_by_include( lr_comp->type ).
-        INSERT LINES OF lt_attri INTO TABLE result.
-      ELSE.
-        INSERT lr_comp->* INTO TABLE result.
-      ENDIF.
-    ENDLOOP.
+    " expand_components also applies the RENAMING WITH SUFFIX of an include
+    result = expand_components( lo_struct->get_components( ) ).
 
   ENDMETHOD.
 
@@ -659,6 +678,31 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     LOOP AT val ASSIGNING <row_in>.
       INSERT INITIAL LINE INTO TABLE tab ASSIGNING <row_out>.
       MOVE-CORRESPONDING <row_in> TO <row_out>.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD itab_filter_by_t_range.
+
+    DATA ref TYPE REF TO data.
+
+    LOOP AT tab REFERENCE INTO ref.
+      LOOP AT val INTO DATA(ls_filter).
+
+        IF ls_filter-t_range IS INITIAL.
+          CONTINUE.
+        ENDIF.
+
+        ASSIGN ref->(ls_filter-name) TO FIELD-SYMBOL(<field>).
+        IF sy-subrc <> 0.
+          CONTINUE.
+        ENDIF.
+        IF <field> NOT IN ls_filter-t_range.
+          DELETE tab.
+          EXIT.
+        ENDIF.
+
+      ENDLOOP.
     ENDLOOP.
 
   ENDMETHOD.
@@ -737,42 +781,40 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     DATA(lv_option) = range-option.
 
     IF range-sign = `E`.
-      CASE lv_option.
-        WHEN `EQ`. lv_option = `NE`.
-        WHEN `NE`. lv_option = `EQ`.
-        WHEN `LT`. lv_option = `GE`.
-        WHEN `LE`. lv_option = `GT`.
-        WHEN `GT`. lv_option = `LE`.
-        WHEN `GE`. lv_option = `LT`.
-        WHEN `CP`. lv_option = `NP`.
-        WHEN `NP`. lv_option = `CP`.
-        WHEN `BT`. lv_option = `NB`.
-        WHEN `NB`. lv_option = `BT`.
-      ENDCASE.
+      lv_option = filter_option_negate( lv_option ).
     ENDIF.
 
-    " CP: only * and + are wildcards - a _ or % the user typed is a plain
-    " character, as in an IN range, so it is escaped
-    DATA(lv_like) = replace( val  = lv_low
-                             sub  = `#`
-                             with = `##`
-                             occ  = 0 ).
-    lv_like = replace( val  = lv_like
-                       sub  = `%`
-                       with = `#%`
-                       occ  = 0 ).
-    lv_like = replace( val  = lv_like
-                       sub  = `_`
-                       with = `#_`
-                       occ  = 0 ).
-    lv_like = replace( val  = lv_like
-                       sub  = `*`
-                       with = `%`
-                       occ  = 0 ).
-    lv_like = replace( val  = lv_like
-                       sub  = `+`
-                       with = `_`
-                       occ  = 0 ).
+    " CP: * and + are the wildcards and # makes the next character a plain
+    " one (`#*` is a star), as in an IN range. A _ or % the user typed is a
+    " plain character, so it is escaped for LIKE
+    DATA(lv_like) = ``.
+    DATA(lv_pos) = 0.
+    DATA(lv_len) = strlen( lv_low ).
+    WHILE lv_pos < lv_len.
+      DATA(lv_char) = substring( val = lv_low
+                                 off = lv_pos
+                                 len = 1 ).
+      IF lv_char = `#` AND lv_pos + 1 < lv_len.
+        lv_pos = lv_pos + 1.
+        lv_char = substring( val = lv_low
+                             off = lv_pos
+                             len = 1 ).
+        IF lv_char CA `#%_`.
+          lv_like = lv_like && `#` && lv_char.
+        ELSE.
+          lv_like = lv_like && lv_char.
+        ENDIF.
+      ELSEIF lv_char = `*`.
+        lv_like = lv_like && `%`.
+      ELSEIF lv_char = `+`.
+        lv_like = lv_like && `_`.
+      ELSEIF lv_char CA `#%_`.
+        lv_like = lv_like && `#` && lv_char.
+      ELSE.
+        lv_like = lv_like && lv_char.
+      ENDIF.
+      lv_pos = lv_pos + 1.
+    ENDWHILE.
 
     CASE lv_option.
       WHEN `EQ`.
@@ -823,6 +865,22 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD rtti_check_typekind_number.
+
+    CASE val.
+      WHEN cl_abap_typedescr=>typekind_int
+          OR cl_abap_typedescr=>typekind_int1
+          OR cl_abap_typedescr=>typekind_int2
+          OR cl_abap_typedescr=>typekind_packed
+          OR cl_abap_typedescr=>typekind_float
+          OR cl_abap_typedescr=>typekind_decfloat16
+          OR cl_abap_typedescr=>typekind_decfloat34
+          OR `8`.
+        result = abap_true.
+    ENDCASE.
+
+  ENDMETHOD.
+
   METHOD data_get_string.
 
     " the plain assignment is what turns an elementary value into its text
@@ -831,20 +889,11 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     TRY.
         " a number through a string template: the assignment puts the sign
         " BEHIND it - -5 came out as `5-`, a packed -12.50 as `12.50-`
-        CASE rtti_get_type_kind( val ).
-          WHEN cl_abap_datadescr=>typekind_int OR
-              cl_abap_datadescr=>typekind_int1 OR
-              cl_abap_datadescr=>typekind_int2 OR
-              cl_abap_datadescr=>typekind_packed OR
-              cl_abap_datadescr=>typekind_float OR
-              cl_abap_datadescr=>typekind_decfloat16 OR
-              cl_abap_datadescr=>typekind_decfloat34 OR
-              `8`.
-            " `8`: typekind_int8, a constant lower releases do not have
-            result = |{ val }|.
-          WHEN OTHERS.
-            result = val.
-        ENDCASE.
+        IF rtti_check_typekind_number( rtti_get_type_kind( val ) ) = abap_true.
+          result = |{ val }|.
+        ELSE.
+          result = val.
+        ENDIF.
       CATCH cx_root ##NO_HANDLER.
     ENDTRY.
 
@@ -852,6 +901,16 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " type needs (` 12` for an i on some runtimes), and a CHAR field brings
     " its padding along - neither is what the value says
     result = c_trim( result ).
+
+  ENDMETHOD.
+
+  METHOD sy_get.
+
+    result-datum = sy-datum.
+    result-uzeit = sy-uzeit.
+    result-uname = sy-uname.
+    result-sysid = sy-sysid.
+    result-saprl = sy-saprl.
 
   ENDMETHOD.
 
@@ -943,6 +1002,24 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   ENDMETHOD.
 
+  METHOD filter_option_negate.
+
+    result = val.
+    CASE result.
+      WHEN `EQ`. result = `NE`.
+      WHEN `NE`. result = `EQ`.
+      WHEN `LT`. result = `GE`.
+      WHEN `LE`. result = `GT`.
+      WHEN `GT`. result = `LE`.
+      WHEN `GE`. result = `LT`.
+      WHEN `CP`. result = `NP`.
+      WHEN `NP`. result = `CP`.
+      WHEN `BT`. result = `NB`.
+      WHEN `NB`. result = `BT`.
+    ENDCASE.
+
+  ENDMETHOD.
+
   METHOD error_get_attributes.
 
     " declared, NOT `DATA(lv_name) = CONV string( lr_attri->name )`: a CONV
@@ -1018,7 +1095,7 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
     " exception, so the TRY below cannot intercept it and the caller would go
     " down instead of reporting the error it was diagnosing. sy-saprl is
     " `OPEN` on that runtime and a real release everywhere else.
-    IF sy-saprl = `OPEN`.
+    IF sy_get( )-saprl = `OPEN`.
       RETURN.
     ENDIF.
 
@@ -1053,19 +1130,9 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    CASE rtti_get_type_kind( val ).
-      WHEN cl_abap_datadescr=>typekind_int OR
-          cl_abap_datadescr=>typekind_int1 OR
-          cl_abap_datadescr=>typekind_int2 OR
-          cl_abap_datadescr=>typekind_packed OR
-          cl_abap_datadescr=>typekind_float OR
-          cl_abap_datadescr=>typekind_decfloat16 OR
-          cl_abap_datadescr=>typekind_decfloat34 OR
-          cl_abap_datadescr=>typekind_hex OR
-          `8`.
-        " `8`: typekind_int8, a constant lower releases do not have
-        result = abap_true.
-    ENDCASE.
+    DATA(lv_type_kind) = rtti_get_type_kind( val ).
+    result = xsdbool( lv_type_kind = cl_abap_datadescr=>typekind_hex
+                      OR rtti_check_typekind_number( lv_type_kind ) = abap_true ).
 
   ENDMETHOD.
 
@@ -1101,16 +1168,21 @@ CLASS z2ui5_cl_sel_context IMPLEMENTATION.
 
   METHOD rtti_get_t_attri_by_oref.
 
+    DATA lo_descr TYPE REF TO cl_abap_typedescr.
+
     " describe_by_object_ref raises the classic exception REFERENCE_IS_INITIAL
     " for an initial reference - called functionally that is a runtime error no
-    " CATCH reaches. The open-abap runtime of the transpiled build declares no
-    " EXCEPTIONS for describe_by_data_ref, so the reference is tested here instead
-    IF val IS INITIAL.
+    " CATCH reaches
+    cl_abap_objectdescr=>describe_by_object_ref( EXPORTING  p_object_ref         = val
+                                                 RECEIVING p_descr_ref           = lo_descr
+                                                 EXCEPTIONS reference_is_initial = 1
+                                                            OTHERS               = 2 ).
+    IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE z2ui5_cx_sel_error
         EXPORTING
           val = `RTTI_REFERENCE_IS_INITIAL`.
     ENDIF.
-    result = CAST cl_abap_classdescr( cl_abap_objectdescr=>describe_by_object_ref( val ) )->attributes.
+    result = CAST cl_abap_classdescr( lo_descr )->attributes.
 
   ENDMETHOD.
 
